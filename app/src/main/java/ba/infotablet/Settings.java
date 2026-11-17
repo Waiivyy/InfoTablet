@@ -48,6 +48,22 @@ public final class Settings {
         prefs.edit().putBoolean("source_on_" + sourceId, on).apply();
     }
 
+    /** Club for the Sport screen: nfsbih team id ("409") or name ("FK Sarajevo"); empty until chosen. */
+    public String sportClub() {
+        return prefs.getString("sport_club", "");
+    }
+
+    /** Keys that may be set from adb (see ConfigReceiver); personal values never ship in the code. */
+    public static final String[] ADB_KEYS = {"sport_club", "creator_name", "creator_link", "water_places", "location_name"};
+
+    public void putString(String key, String value) {
+        prefs.edit().putString(key, value).apply();
+    }
+
+    public String getString(String key) {
+        return prefs.getString(key, "");
+    }
+
     /** Hide "crna hronika" (crime) news; on by default. */
     public boolean hideCrime() {
         return prefs.getBoolean("news_hide_crime", true);

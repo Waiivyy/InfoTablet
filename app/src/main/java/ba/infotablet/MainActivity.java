@@ -23,6 +23,7 @@ import ba.infotablet.fuel.FuelScreen;
 import ba.infotablet.home.HomeScreen;
 import ba.infotablet.home.PlaceholderPanel;
 import ba.infotablet.news.NewsScreen;
+import ba.infotablet.sport.SportScreen;
 import ba.infotablet.sync.Scheduler;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
@@ -134,6 +135,10 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 NewsScreen n = new NewsScreen(this, palette);
                 screen = n;
                 view = n;
+            } else if (index == 5) {
+                SportScreen s = new SportScreen(this, palette);
+                screen = s;
+                view = s;
             } else {
                 screen = null;
                 FrameLayout wrap = new FrameLayout(this);

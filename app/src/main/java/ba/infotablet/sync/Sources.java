@@ -9,6 +9,7 @@ import ba.infotablet.sources.AirStationsSource;
 import ba.infotablet.sources.FuelSource;
 import ba.infotablet.sources.NewsParser;
 import ba.infotablet.sources.NewsSource;
+import ba.infotablet.sources.SportSource;
 import ba.infotablet.sources.WarningsSource;
 import ba.infotablet.sources.WeatherSource;
 
@@ -25,6 +26,7 @@ public final class Sources {
         list.add(new AirCamsSource());
         list.add(new FuelSource());
         for (NewsParser.Portal p : NewsParser.Portal.values()) list.add(new NewsSource(p));
+        list.add(new SportSource());
         return Collections.unmodifiableList(list);
     }
 }
