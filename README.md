@@ -66,6 +66,18 @@ Keys: `creator_name`, `creator_link` (shown in O aplikaciji), `sport_club`, `wat
 (streets for the water works notices), `city`, `city2`, and `pin`. A value of `-` clears the
 setting (for `pin`: removes a forgotten PIN).
 
+## Health diary
+
+Every 15 minutes the app writes one line to `InfoTablet/log/health-<date>.tsv` on the tablet's
+storage: process memory, free system memory, battery temperature, level and health, power source,
+network, and how many times each source succeeded or failed since the line before. App starts,
+installed updates and crashes (with the stack trace) are logged too. Files are kept for 14 days and
+never leave the tablet:
+
+```sh
+adb pull /sdcard/InfoTablet/log
+```
+
 ## Licences
 
 Third-party components and fonts are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

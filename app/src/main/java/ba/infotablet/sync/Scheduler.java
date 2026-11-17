@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import ba.infotablet.Settings;
 import ba.infotablet.data.Cache;
+import ba.infotablet.data.HealthLog;
 import ba.infotablet.data.SourceState;
 import ba.infotablet.update.Updater;
 
@@ -106,7 +107,12 @@ public final class Scheduler {
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             try {
+                HealthLog.maybeWrite(ctx, System.currentTimeMillis());
                 runDue();
+            } catch (RuntimeException e) {
+                // Keep the loop alive; the diary keeps the evidence.
+                Log.e(TAG, "sync loop", e);
+                HealthLog.event(ctx, "ERROR", "sync loop " + e);
             } finally {
                 bg.postDelayed(this, TICK_MS);
             }
@@ -134,10 +140,12 @@ public final class Scheduler {
         try {
             String payload = s.fetch(ctx);
             Cache.putOk(ctx, s.id(), payload, System.currentTimeMillis());
+            HealthLog.count(s.id(), true);
             Log.i(TAG, "sync ok " + s.id() + " " + (System.currentTimeMillis() - t0) + "ms " + payload.length() + "B");
         } catch (Throwable e) {
             String msg = e.getClass().getSimpleName() + ": " + e.getMessage();
             Cache.putFail(ctx, s.id(), msg, System.currentTimeMillis());
+            HealthLog.count(s.id(), false);
             Log.w(TAG, "sync fail " + s.id() + " " + msg);
         }
         notifyChanged();

@@ -76,7 +76,10 @@ public final class Updater {
     public static void settle(Context c) {
         UpdateState st = UpdateState.of(c);
         String installed = st.settle(c);
-        if (installed != null) st.failed(System.currentTimeMillis(), "Instalirana je nova verzija " + installed + ".");
+        if (installed != null) {
+            st.failed(System.currentTimeMillis(), "Instalirana je nova verzija " + installed + ".");
+            ba.infotablet.data.HealthLog.event(c, "UPDATE", "installed " + installed);
+        }
     }
 
     // ---- when to check ----
