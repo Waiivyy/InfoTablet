@@ -12,6 +12,7 @@ import ba.infotablet.sync.Scheduler;
 /**
  * Sets device-only values from a computer over adb, so personal data never ends up in the code:
  * adb shell am broadcast -a ba.infotablet.CONFIG --es key sport_club --es value 409
+ * A value of "-" clears the setting (adb cannot pass an empty string).
  * The receiver requires android.permission.DUMP, which the adb shell has and normal apps cannot get.
  */
 public final class ConfigReceiver extends BroadcastReceiver {
@@ -25,7 +26,8 @@ public final class ConfigReceiver extends BroadcastReceiver {
             setResultCode(1);
             return;
         }
-        Settings.of(ctx).putString(key, value.trim());
+        String v = value.trim();
+        Settings.of(ctx).putString(key, v.equals("-") ? "" : v);
         Log.i("InfoTablet", "config: " + key + " updated");
         Scheduler s = Scheduler.get(ctx);
         if (key.equals("sport_club")) s.refreshNow("sport");
