@@ -6,6 +6,7 @@ import java.util.List;
 
 import ba.infotablet.sources.AirCamsSource;
 import ba.infotablet.sources.AirStationsSource;
+import ba.infotablet.sources.FuelSource;
 import ba.infotablet.sources.WarningsSource;
 import ba.infotablet.sources.WeatherSource;
 
@@ -20,6 +21,7 @@ public final class Sources {
         list.add(new WarningsSource());
         list.add(new AirStationsSource());
         list.add(new AirCamsSource());
+        list.add(new FuelSource());
         return Collections.unmodifiableList(list);
     }
 }

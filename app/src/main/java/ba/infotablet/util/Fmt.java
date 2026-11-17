@@ -72,6 +72,21 @@ public final class Fmt {
         }
     }
 
+    /** Bosnian plural: 1 pumpa, 2 to 4 pumpe, 5 and more pumpi (21 pumpa, 22 pumpe, 11 to 14 pumpi). */
+    public static String plural(int n, String one, String few, String many) {
+        int m10 = n % 10, m100 = n % 100;
+        if (m10 == 1 && m100 != 11) return n + " " + one;
+        if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return n + " " + few;
+        return n + " " + many;
+    }
+
+    /** "17.11.2026." */
+    public static String fullDate(long t) {
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(t);
+        return c.get(Calendar.DAY_OF_MONTH) + "." + (c.get(Calendar.MONTH) + 1) + "." + c.get(Calendar.YEAR) + ".";
+    }
+
     /** "danas 14:05" style, for "zadnje ..." notes; just the time when it is today. */
     public static String when(long now, long t) {
         return dayOffset(now, t) == 0 ? hhmm(t) : relDay(now, t) + " " + hhmm(t);

@@ -19,6 +19,7 @@ import android.widget.LinearLayout;
 
 import java.util.Locale;
 
+import ba.infotablet.fuel.FuelScreen;
 import ba.infotablet.home.HomeScreen;
 import ba.infotablet.home.PlaceholderPanel;
 import ba.infotablet.sync.Scheduler;
@@ -124,6 +125,10 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 WeatherScreen w = new WeatherScreen(this, palette);
                 screen = w;
                 view = w;
+            } else if (index == 2) {
+                FuelScreen f = new FuelScreen(this, palette);
+                screen = f;
+                view = f;
             } else {
                 screen = null;
                 FrameLayout wrap = new FrameLayout(this);
