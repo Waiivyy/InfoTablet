@@ -2,8 +2,10 @@ package ba.infotablet;
 
 import android.app.Application;
 
+import ba.infotablet.alarm.AlarmScheduler;
 import ba.infotablet.net.Net;
 import ba.infotablet.sync.Scheduler;
+import ba.infotablet.web.WebServer;
 
 public final class App extends Application {
 
@@ -12,5 +14,7 @@ public final class App extends Application {
         super.onCreate();
         Net.init(this);
         Scheduler.get(this).start();
+        AlarmScheduler.reschedule(this);
+        WebServer.update(this);
     }
 }

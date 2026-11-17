@@ -1,12 +1,15 @@
 package ba.infotablet.ui;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -87,6 +90,42 @@ public final class Ui {
         t.setPadding(dp(c, 8), dp(c, 4), dp(c, 8), dp(c, 4));
         t.setSingleLine(true);
         return t;
+    }
+
+    /**
+     * A large touch button: accent fill (primary) or outlined panel (secondary), darker while
+     * pressed and greyed when disabled.
+     */
+    public static TextView button(Context c, Palette p, String label, boolean primary, float sizeDp) {
+        TextView t = text(c, sizeDp, Fonts.medium(), primary ? p.accentFg : p.fg);
+        t.setText(label);
+        t.setGravity(Gravity.CENTER);
+        t.setSingleLine(true);
+        t.setTextColor(new ColorStateList(
+                new int[][] {{-android.R.attr.state_enabled}, {}},
+                new int[] {p.fg3, primary ? p.accentFg : p.fg}));
+        t.setBackgroundDrawable(buttonBackground(c, p, primary));
+        t.setClickable(true);
+        t.setPadding(dp(c, 16), 0, dp(c, 16), 0);
+        return t;
+    }
+
+    /** The button background on its own, for buttons that hold an icon instead of text. */
+    public static StateListDrawable buttonBackground(Context c, Palette p, boolean primary) {
+        int stroke = primary ? 0 : p.line;
+        StateListDrawable s = new StateListDrawable();
+        s.addState(new int[] {-android.R.attr.state_enabled}, rounded(c, p.soft, 0, 8));
+        s.addState(new int[] {android.R.attr.state_pressed}, rounded(c, primary ? blend(p.accent, 0xFF000000, 0.2f) : p.soft, stroke, 8));
+        s.addState(new int[0], rounded(c, primary ? p.accent : p.panel, stroke, 8));
+        return s;
+    }
+
+    /** Mixes two opaque colours: t = 0 gives a, t = 1 gives b. */
+    public static int blend(int a, int b, float t) {
+        int r = Math.round(((a >> 16) & 0xFF) * (1 - t) + ((b >> 16) & 0xFF) * t);
+        int g = Math.round(((a >> 8) & 0xFF) * (1 - t) + ((b >> 8) & 0xFF) * t);
+        int bl = Math.round((a & 0xFF) * (1 - t) + (b & 0xFF) * t);
+        return 0xFF000000 | (r << 16) | (g << 8) | bl;
     }
 
     public static View hairline(Context c, int color) {

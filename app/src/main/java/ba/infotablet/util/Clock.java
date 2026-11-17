@@ -14,6 +14,11 @@ public final class Clock {
         return System.currentTimeMillis() + offsetMs;
     }
 
+    /** How far the shown time is ahead of real time (0 in release builds). */
+    public static long offset() {
+        return offsetMs;
+    }
+
     public static void setDebugOffset(long ms) {
         offsetMs = ms;
     }

@@ -11,7 +11,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public final class Db extends SQLiteOpenHelper {
 
     private static final String NAME = "infotablet.db";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
 
     private static Db instance;
 
@@ -34,10 +34,28 @@ public final class Db extends SQLiteOpenHelper {
                 + "fail_count INTEGER NOT NULL DEFAULT 0,"
                 + "first_fail_at INTEGER NOT NULL DEFAULT 0,"
                 + "error TEXT)");
+        createReminders(db);
+    }
+
+    private static void createReminders(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE reminders ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "text TEXT NOT NULL,"
+                + "year INTEGER NOT NULL, month INTEGER NOT NULL, day INTEGER NOT NULL,"
+                + "hour INTEGER NOT NULL, minute INTEGER NOT NULL,"
+                + "repeat INTEGER NOT NULL DEFAULT 0,"
+                + "category TEXT NOT NULL DEFAULT '',"
+                + "handled_until INTEGER NOT NULL DEFAULT 0,"
+                + "snooze_for INTEGER NOT NULL DEFAULT 0,"
+                + "snooze_until INTEGER NOT NULL DEFAULT 0,"
+                + "rings INTEGER NOT NULL DEFAULT 0,"
+                + "created_at INTEGER NOT NULL DEFAULT 0,"
+                + "updated_at INTEGER NOT NULL DEFAULT 0)");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Future versions add tables or columns here; existing data is always kept.
+        // Each step only adds tables or columns; existing data is always kept.
+        if (oldVersion < 2) createReminders(db);
     }
 }

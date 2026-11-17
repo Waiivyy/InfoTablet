@@ -36,6 +36,11 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        // Date logic is tested in the tablet's time zone, whatever the build machine uses.
+        unitTests.all { systemProperty 'user.timezone', 'Europe/Sarajevo' }
+    }
+
     lint {
         disable 'OldTargetApi', 'GradleDependency', 'NewerVersionAvailable'
     }
@@ -52,6 +57,11 @@ dependencies {
     implementation 'org.conscrypt:conscrypt-android:2.5.3'
     // 1.15.3 is the newest jsoup without java.util.function / stream use (not on API 17).
     implementation 'org.jsoup:jsoup:1.15.3'
+    // Wi-Fi page server (Java 6 bytecode, no newer Android APIs).
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    // QR codes. Only the QR encoder is used; it needs nothing newer than Android 4.2
+    // (StandardCharsets appears only in the PDF417, Aztec and DataMatrix code, which is never loaded).
+    implementation 'com.google.zxing:core:3.3.3'
 
     testImplementation 'junit:junit:4.13.2'
     // Real org.json on the JVM (android.jar only has stubs in unit tests).

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Text caret in the accent colour (Android 4.2 can only set it from XML). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FF1F46B0" />
+    <size android:width="2dp" />
+</shape>

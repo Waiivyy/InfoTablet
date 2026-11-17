@@ -19,14 +19,17 @@ import android.widget.LinearLayout;
 
 import java.util.Locale;
 
+import ba.infotablet.alarm.AlarmScheduler;
 import ba.infotablet.calendar.CalendarScreen;
 import ba.infotablet.fuel.FuelScreen;
 import ba.infotablet.home.HomeScreen;
-import ba.infotablet.home.PlaceholderPanel;
 import ba.infotablet.news.NewsScreen;
+import ba.infotablet.reminders.RemindersScreen;
+import ba.infotablet.settings.SettingsScreen;
 import ba.infotablet.sport.SportScreen;
 import ba.infotablet.useful.UsefulScreen;
 import ba.infotablet.sync.Scheduler;
+import ba.infotablet.ui.Busy;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
 import ba.infotablet.ui.Rail;
@@ -44,10 +47,13 @@ import ba.infotablet.weather.WeatherScreen;
 public final class MainActivity extends Activity implements Rail.Listener, Scheduler.Listener {
 
     private static final long IDLE_RETURN_MS = 2 * 60 * 1000L;
+    /** With unsaved input (an open reminder editor) the return waits up to this long. */
+    private static final long IDLE_RETURN_BUSY_MS = 10 * 60 * 1000L;
     private static final long LOW_PROFILE_DELAY_MS = 3000L;
 
     private final Handler handler = new Handler();
-    private final Runnable idleReturn = () -> onTab(0);
+    private final Runnable idleReturn = this::onIdle;
+    private long lastTouchAt;
     private final Runnable lowProfile = this::applyLowProfile;
 
     private Palette palette = Palette.LIGHT;
@@ -64,6 +70,7 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
         @Override public void onReceive(Context c, Intent i) {
             refreshScreen();
             refreshStatus();
+            AlarmScheduler.checkRinging(c); // safety net if a system alarm was missed
         }
     };
 
@@ -122,7 +129,7 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
             content.removeAllViews();
             View view;
             if (index == 0) {
-                HomeScreen h = new HomeScreen(this, palette);
+                HomeScreen h = new HomeScreen(this, palette, this);
                 screen = h;
                 view = h;
             } else if (index == 1) {
@@ -145,17 +152,18 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 SportScreen s = new SportScreen(this, palette);
                 screen = s;
                 view = s;
+            } else if (index == 6) {
+                RemindersScreen r = new RemindersScreen(this, palette);
+                screen = r;
+                view = r;
             } else if (index == 7) {
                 UsefulScreen u = new UsefulScreen(this, palette);
                 screen = u;
                 view = u;
             } else {
-                screen = null;
-                FrameLayout wrap = new FrameLayout(this);
-                int pad = Ui.dp(this, 12);
-                wrap.setPadding(pad, pad, pad, pad);
-                wrap.addView(new PlaceholderPanel(this, palette, Rail.LABELS[index], "Ovaj ekran dolazi uskoro"));
-                view = wrap;
+                SettingsScreen st = new SettingsScreen(this, palette);
+                screen = st;
+                view = st;
             }
             content.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
             refreshScreen();
@@ -230,8 +238,18 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
     }
 
     private void restartIdleTimer() {
+        lastTouchAt = System.currentTimeMillis();
         handler.removeCallbacks(idleReturn);
         if (tab != 0) handler.postDelayed(idleReturn, IDLE_RETURN_MS);
+    }
+
+    private void onIdle() {
+        boolean busy = screen instanceof Busy && ((Busy) screen).busy();
+        if (busy && System.currentTimeMillis() - lastTouchAt < IDLE_RETURN_BUSY_MS) {
+            handler.postDelayed(idleReturn, IDLE_RETURN_MS);
+            return;
+        }
+        onTab(0);
     }
 
     private void applyLowProfile() {

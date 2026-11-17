@@ -7,12 +7,15 @@ import android.util.Log;
 
 import java.util.Arrays;
 
+import ba.infotablet.security.Pin;
 import ba.infotablet.sync.Scheduler;
+import ba.infotablet.web.WebServer;
 
 /**
  * Sets device-only values from a computer over adb, so personal data never ends up in the code:
  * adb shell am broadcast -a ba.infotablet.CONFIG --es key sport_club --es value 409
- * A value of "-" clears the setting (adb cannot pass an empty string).
+ * A value of "-" clears the setting (adb cannot pass an empty string). The key "pin" sets the
+ * PIN (stored as a hash; "-" removes it, for when it has been forgotten).
  * The receiver requires android.permission.DUMP, which the adb shell has and normal apps cannot get.
  */
 public final class ConfigReceiver extends BroadcastReceiver {
@@ -21,6 +24,19 @@ public final class ConfigReceiver extends BroadcastReceiver {
     public void onReceive(Context ctx, Intent intent) {
         String key = intent.getStringExtra("key");
         String value = intent.getStringExtra("value");
+        if ("pin".equals(key) && value != null) {
+            String v = value.trim();
+            if (!v.equals("-") && !Pin.valid(v)) {
+                Log.w("InfoTablet", "config: PIN must be 4 to 8 digits");
+                setResultCode(1);
+                return;
+            }
+            Settings.of(ctx).setPinHash(v.equals("-") ? "" : Pin.hash(v));
+            Log.i("InfoTablet", "config: pin " + (v.equals("-") ? "removed" : "set"));
+            WebServer.update(ctx);
+            setResultCode(0);
+            return;
+        }
         if (key == null || value == null || !Arrays.asList(Settings.ADB_KEYS).contains(key)) {
             Log.w("InfoTablet", "config: unknown or missing key");
             setResultCode(1);

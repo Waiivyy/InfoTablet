@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A plain text field; inflated from XML only because the caret colour cannot be set in code on Android 4.2.
+     Its label and hint are set in code (setLabelFor, setHint). -->
+<EditText xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UnusedAttribute,LabelFor"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:inputType="textCapSentences|textNoSuggestions"
+    android:importantForAutofill="no"
+    android:imeOptions="actionDone|flagNoExtractUi|flagNoFullscreen"
+    android:singleLine="true"
+    android:textCursorDrawable="@drawable/cursor" />

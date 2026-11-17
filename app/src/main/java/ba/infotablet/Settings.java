@@ -64,6 +64,28 @@ public final class Settings {
         return prefs.getString(key, "");
     }
 
+    /** PIN for Postavke and the Wi-Fi page, stored only as a salted hash ("" when not set yet). */
+    public String pinHash() {
+        return prefs.getString("pin_hash", "");
+    }
+
+    public boolean hasPin() {
+        return !pinHash().isEmpty();
+    }
+
+    public void setPinHash(String hash) {
+        prefs.edit().putString("pin_hash", hash == null ? "" : hash).apply();
+    }
+
+    /** The local Wi-Fi page for adding reminders from a phone; on by default (it only runs once a PIN is set). */
+    public boolean webEnabled() {
+        return prefs.getBoolean("web_enabled", true);
+    }
+
+    public void setWebEnabled(boolean on) {
+        prefs.edit().putBoolean("web_enabled", on).apply();
+    }
+
     /** Hide "crna hronika" (crime) news; on by default. */
     public boolean hideCrime() {
         return prefs.getBoolean("news_hide_crime", true);
