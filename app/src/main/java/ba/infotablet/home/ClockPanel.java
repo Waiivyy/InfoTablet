@@ -13,6 +13,7 @@ import ba.infotablet.ui.NarrowSpan;
 import ba.infotablet.ui.Palette;
 import ba.infotablet.ui.Ui;
 import ba.infotablet.util.BsDate;
+import ba.infotablet.util.Clock;
 
 /** The large clock and date on Početna. Updated once a minute by the activity (ACTION_TIME_TICK). */
 public final class ClockPanel extends LinearLayout {
@@ -50,6 +51,7 @@ public final class ClockPanel extends LinearLayout {
 
     public void update() {
         Calendar now = Calendar.getInstance();
+        now.setTimeInMillis(Clock.now());
         String t = BsDate.hhmm(now);
         String d = BsDate.longDate(now);
         if (!t.equals(shownTime)) {

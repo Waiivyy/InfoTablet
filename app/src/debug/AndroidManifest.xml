@@ -8,5 +8,12 @@
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
+        <receiver
+            android:name=".debug.DebugTimeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="ba.infotablet.DEBUG_TIME" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -2,12 +2,15 @@ package ba.infotablet.ui;
 
 import android.content.Context;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.Locale;
@@ -64,6 +67,26 @@ public final class Ui {
         float pad = t.getTextSize() * 0.05f;
         lp.topMargin += Math.round(fm.ascent - digits.top + pad);
         lp.bottomMargin += Math.round(digits.bottom - fm.descent + pad);
+    }
+
+    /** A tinted icon from the generated vector PNGs. */
+    public static ImageView icon(Context c, int res, int color, float sizeDp) {
+        ImageView v = new ImageView(c);
+        v.setImageResource(res);
+        v.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        v.getDrawable().mutate().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+        v.setLayoutParams(new LinearLayout.LayoutParams(dp(c, sizeDp), dp(c, sizeDp)));
+        return v;
+    }
+
+    /** A small coloured chip with bold uppercase text, for warning levels and air quality. */
+    public static TextView chip(Context c, String text, int fill, int textColor) {
+        TextView t = text(c, 11.5f, Fonts.medium(), textColor);
+        t.setText(TrackingSpan.of(text.toUpperCase(Locale.ROOT), 0.08f));
+        t.setBackgroundDrawable(rounded(c, fill, 0, 4));
+        t.setPadding(dp(c, 8), dp(c, 4), dp(c, 8), dp(c, 4));
+        t.setSingleLine(true);
+        return t;
     }
 
     public static View hairline(Context c, int color) {

@@ -54,4 +54,6 @@ dependencies {
     implementation 'org.jsoup:jsoup:1.15.3'
 
     testImplementation 'junit:junit:4.13.2'
+    // Real org.json on the JVM (android.jar only has stubs in unit tests).
+    testImplementation 'org.json:json:20260814'
 }

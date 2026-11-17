@@ -21,17 +21,22 @@ import java.util.Locale;
 
 import ba.infotablet.home.HomeScreen;
 import ba.infotablet.home.PlaceholderPanel;
+import ba.infotablet.sync.Scheduler;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
 import ba.infotablet.ui.Rail;
+import ba.infotablet.ui.Refreshable;
 import ba.infotablet.ui.StatusLine;
 import ba.infotablet.ui.Ui;
+import ba.infotablet.util.Clock;
+import ba.infotablet.util.Fmt;
+import ba.infotablet.weather.WeatherScreen;
 
 /**
  * The only activity. It is also the device's home screen, so it never finishes: Back and Home
  * lead to Početna, and two minutes without touch return there as well.
  */
-public final class MainActivity extends Activity implements Rail.Listener {
+public final class MainActivity extends Activity implements Rail.Listener, Scheduler.Listener {
 
     private static final long IDLE_RETURN_MS = 2 * 60 * 1000L;
     private static final long LOW_PROFILE_DELAY_MS = 3000L;
@@ -44,7 +49,7 @@ public final class MainActivity extends Activity implements Rail.Listener {
     private Rail rail;
     private FrameLayout content;
     private StatusLine status;
-    private HomeScreen home;
+    private Refreshable screen;
     private int tab = -1;
 
     private int batteryTenthsC = Integer.MIN_VALUE;
@@ -52,7 +57,8 @@ public final class MainActivity extends Activity implements Rail.Listener {
 
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context c, Intent i) {
-            if (home != null) home.onMinute();
+            refreshScreen();
+            refreshStatus();
         }
     };
 
@@ -109,21 +115,37 @@ public final class MainActivity extends Activity implements Rail.Listener {
             tab = index;
             rail.select(index);
             content.removeAllViews();
-            home = null;
-            View screen;
+            View view;
             if (index == 0) {
-                home = new HomeScreen(this, palette);
-                screen = home;
+                HomeScreen h = new HomeScreen(this, palette);
+                screen = h;
+                view = h;
+            } else if (index == 1) {
+                WeatherScreen w = new WeatherScreen(this, palette);
+                screen = w;
+                view = w;
             } else {
+                screen = null;
                 FrameLayout wrap = new FrameLayout(this);
                 int pad = Ui.dp(this, 12);
                 wrap.setPadding(pad, pad, pad, pad);
                 wrap.addView(new PlaceholderPanel(this, palette, Rail.LABELS[index], "Ovaj ekran dolazi uskoro"));
-                screen = wrap;
+                view = wrap;
             }
-            content.addView(screen, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            content.addView(view, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            refreshScreen();
         }
         restartIdleTimer();
+    }
+
+    @Override
+    public void onDataChanged() {
+        refreshScreen();
+        refreshStatus();
+    }
+
+    private void refreshScreen() {
+        if (screen != null) screen.refresh(Clock.now());
     }
 
     @Override
@@ -139,8 +161,9 @@ public final class MainActivity extends Activity implements Rail.Listener {
         sys.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(systemReceiver, sys);
 
+        Scheduler.get(this).addListener(this);
         wifiOk = isWifiConnected();
-        if (home != null) home.onMinute();
+        refreshScreen();
         refreshStatus();
         applyLowProfile();
         restartIdleTimer();
@@ -148,6 +171,7 @@ public final class MainActivity extends Activity implements Rail.Listener {
 
     @Override
     protected void onPause() {
+        Scheduler.get(this).removeListener(this);
         unregisterReceiver(timeReceiver);
         unregisterReceiver(systemReceiver);
         handler.removeCallbacks(idleReturn);
@@ -196,7 +220,10 @@ public final class MainActivity extends Activity implements Rail.Listener {
     }
 
     private void refreshStatus() {
-        status.setLeft("Sync --:-- · 0/0 izvora OK · WiFi " + (wifiOk ? "OK" : "nema"), wifiOk ? 0 : 1);
+        Scheduler.Summary s = Scheduler.get(this).summary();
+        String sync = s.lastOkAt == 0 ? "--:--" : Fmt.hhmm(s.lastOkAt);
+        int level = (!wifiOk || s.ok < s.total) ? 1 : 0;
+        status.setLeft("Sync " + sync + " · " + s.ok + "/" + s.total + " izvora OK · WiFi " + (wifiOk ? "OK" : "nema"), level);
         String battery = batteryTenthsC == Integer.MIN_VALUE ? "--" : String.format(Locale.ROOT, "%.0f", batteryTenthsC / 10f);
         status.setRight("Baterija " + battery + " °C");
     }

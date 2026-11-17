@@ -54,7 +54,7 @@ Verified on 2026-11-16/17 by fetching every source live. This file records what 
 
 ### Measured: FHMZ stations (zrak.fhmzbih.gov.ba)
 
-- **Primary (undocumented JSON):** `https://zrak.fhmzbih.gov.ba/rest/index/data-station/{id}/0` per station (about 200 B, no gzip), rows `[componentId, name, value µg/m³, level]`. Or one call for all stations: `/rest/index/data/eaqi/0` (3 KB), rows `[id, code, name, lat, lon, canton, value, level, isComplete, ...]`.
+- **Primary (undocumented JSON), as implemented:** three calls for all stations, `/rest/index/data/eaqi/0`, `/rest/index/data/pm25/0` and `/rest/index/data/pm10/0` (about 3 KB each, no gzip), rows `[id, code, name, lat, lon, canton, value, level, isComplete, ...]`, plus the portal home page (6 KB gzip) whose `#f-filter-hour option[value=0]` title gives the measurement hour ("17.11.2026. u 01:00"; "u 24:00" means midnight). Per-station detail exists at `/rest/index/data-station/{id}/0` (rows `[componentId, name, value µg/m³, level]`) but is not needed.
   - Sarajevo station ids: Bjelave 3, Vijećnica 17, Otoka 12, Ilidža 13, Ivan Sedlo 1 (also Saraj Polje 34, Vogošća 27, Hadžići 26, Ilijaš 18).
   - Level is 0-based EEA scale: 0 dobar, 1 prihvatljiv, 2 umjeren, 3 loš, 4 vrlo loš, 5 izuzetno loš.
   - The JSON has no timestamp. The hour comes from the fallback page or is assumed to be the last full hour (data appears about 25 minutes after the hour).
