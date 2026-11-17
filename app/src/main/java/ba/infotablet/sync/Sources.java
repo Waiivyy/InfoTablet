@@ -11,6 +11,7 @@ import ba.infotablet.sources.NewsParser;
 import ba.infotablet.sources.NewsSource;
 import ba.infotablet.sources.RatesSource;
 import ba.infotablet.sources.RoadsSource;
+import ba.infotablet.sources.SecondCitySource;
 import ba.infotablet.sources.SmogSource;
 import ba.infotablet.sources.SportSource;
 import ba.infotablet.sources.WaterSource;
@@ -35,6 +36,7 @@ public final class Sources {
         list.add(new WaterSource());
         list.add(new SmogSource());
         list.add(new RoadsSource());
+        list.add(new SecondCitySource());
         return Collections.unmodifiableList(list);
     }
 }

@@ -39,7 +39,7 @@ public final class NewsScreen extends FrameLayout implements Refreshable {
     public NewsScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        int pad = Ui.dp(c, 12);
+        int pad = Ui.pagePad(c);
         LinearLayout root = new LinearLayout(c);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(pad, pad, pad, 0);
@@ -81,6 +81,7 @@ public final class NewsScreen extends FrameLayout implements Refreshable {
         chips.removeAllViews();
         for (int i = 0; i < CHIPS.length; i++) {
             final int index = i;
+            if (CHIPS[i][0] != null && ba.infotablet.Settings.of(c).newsCategoryHidden(CHIPS[i][0])) continue; // hidden in Postavke
             boolean on = i == chip;
             TextView t = Ui.text(c, 15, Fonts.medium(), on ? p.accentFg : p.fg2);
             t.setText(CHIPS[i][1]);

@@ -39,7 +39,7 @@ public final class FuelScreen extends FrameLayout implements Refreshable {
     public FuelScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        int pad = Ui.dp(c, 12), gap = Ui.dp(c, 10), sideW = Ui.dp(c, 282);
+        int pad = Ui.pagePad(c), gap = Ui.gap(c), sideW = Ui.dp(c, 282);
 
         LinearLayout root = new LinearLayout(c);
         root.setOrientation(LinearLayout.VERTICAL);

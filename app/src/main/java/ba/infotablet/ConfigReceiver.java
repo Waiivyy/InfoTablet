@@ -48,6 +48,12 @@ public final class ConfigReceiver extends BroadcastReceiver {
         Scheduler s = Scheduler.get(ctx);
         if (key.equals("sport_club")) s.refreshNow("sport");
         if (key.equals("water_places")) s.refreshNow("water");
+        if (key.equals("city")) {
+            s.refreshNow("weather");
+            s.refreshNow("warnings");
+            s.refreshNow("air_cams");
+        }
+        if (key.equals("city2")) s.refreshNow("weather2");
         s.notifyChanged();
         setResultCode(0);
     }

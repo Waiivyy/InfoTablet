@@ -82,4 +82,15 @@ public class NewsParserTest {
         assertEquals("", NewsParser.summaryFallback("Procjene stručnjaka o uzrocima još nisu pozna"));
         assertEquals("Općina je objavila raspored.", NewsParser.summaryFallback("Općina je objavila raspored."));
     }
+
+    @Test
+    public void crimeWordsInHeadlineOrLead() {
+        assertTrue(NewsParser.soundsLikeCrime("Bježao policiji pa udario djevojčicu. Trinaestogodišnja djevojčica poginula je kod Aschaffenburga."));
+        assertTrue(NewsParser.soundsLikeCrime("Muškarac izboden nožem u Novom Gradu"));
+        assertTrue(NewsParser.soundsLikeCrime("Uhapšen osumnjičeni za ubistvo"));
+        assertTrue(NewsParser.soundsLikeCrime("Pucnjava na Ilidži"));
+        assertFalse(NewsParser.soundsLikeCrime("Ubijeđen sam da će se cijene goriva smanjiti"));
+        assertFalse(NewsParser.soundsLikeCrime("Mané se sprema za veliki povratak u Evropu"));
+        assertFalse(NewsParser.soundsLikeCrime("Lesnina otvara novu radnju"));
+    }
 }

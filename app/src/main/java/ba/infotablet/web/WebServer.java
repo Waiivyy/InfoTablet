@@ -133,6 +133,17 @@ public final class WebServer extends NanoHTTPD {
             return html(Pages.list(Agenda.all(ReminderStore.all(ctx), now), now, csrf, msg(f.get("m"))));
         }
         if (m == Method.GET && uri.equals("/new")) return html(Pages.form(Pages.fresh(now), true, null, csrf));
+        if (m == Method.GET && uri.equals("/backup")) {
+            try {
+                Response r = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",
+                        ba.infotablet.data.Backup.create(ctx, now).toString(1));
+                r.addHeader("Content-Disposition", "attachment; filename=\"" + ba.infotablet.data.Backup.fileName(now) + "\"");
+                secure(r);
+                return r;
+            } catch (org.json.JSONException e) {
+                return text(Response.Status.INTERNAL_ERROR, "Kopija nije napravljena.");
+            }
+        }
         if (m == Method.GET && uri.equals("/edit")) {
             Reminder r = find(f.get("id"));
             return r == null ? redirect("/") : html(Pages.form(r, false, null, csrf));

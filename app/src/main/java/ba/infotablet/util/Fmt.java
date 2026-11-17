@@ -33,6 +33,13 @@ public final class Fmt {
         return BsDate.hhmm(c);
     }
 
+    /** Hours and minutes of t read as UTC, for a time already shifted to another place's offset. */
+    public static String hhmmUtc(long t) {
+        Calendar c = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        c.setTimeInMillis(t);
+        return BsDate.hhmm(c);
+    }
+
     /** "17.11." */
     public static String dayMonth(long t) {
         Calendar c = Calendar.getInstance();

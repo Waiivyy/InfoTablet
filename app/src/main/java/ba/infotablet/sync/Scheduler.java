@@ -93,7 +93,7 @@ public final class Scheduler {
         long last = 0;
         Settings settings = Settings.of(ctx);
         for (BaseSource s : sources) {
-            if (!settings.sourceEnabled(s.id())) continue;
+            if (!settings.sourceEnabled(s.id()) || !s.active(ctx)) continue;
             total++;
             SourceState st = Cache.get(ctx, s.id());
             if (st.hasData() && !st.failing()) ok++;
@@ -115,8 +115,9 @@ public final class Scheduler {
     private void runDue() {
         if (!online()) return;
         Settings settings = Settings.of(ctx);
+        BaseSource.slowdown = settings.refreshFactor();
         for (BaseSource s : sources) {
-            if (!settings.sourceEnabled(s.id())) continue;
+            if (!settings.sourceEnabled(s.id()) || !s.active(ctx)) continue;
             long now = System.currentTimeMillis();
             if (now >= s.dueAt(Cache.get(ctx, s.id()), now)) run(s);
         }

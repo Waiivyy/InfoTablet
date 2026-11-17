@@ -122,7 +122,8 @@ public final class Pages {
             b.append("</div>");
         }
         b.append("</div><form method='post' action='/logout' class='foot'><input type='hidden' name='csrf' value='").append(csrf)
-                .append("'><button class='btn small' type='submit'>Odjava</button></form>");
+                .append("'><a class='btn small' href='/backup'>Preuzmi rezervnu kopiju</a> ")
+                .append("<button class='btn small' type='submit'>Odjava</button></form>");
         return page("Podsjetnici", b.toString());
     }
 

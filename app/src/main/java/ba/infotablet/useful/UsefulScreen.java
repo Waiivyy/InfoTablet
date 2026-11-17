@@ -37,7 +37,7 @@ import ba.infotablet.util.Fmt;
 /** Korisno: exchange rates, water works for your streets, smog episode, roads and borders, winter equipment. */
 public final class UsefulScreen extends FrameLayout implements Refreshable {
 
-    private static final String[][] CURRENCY_NAMES = {
+    public static final String[][] CURRENCY_NAMES = {
             {"USD", "američki dolar"}, {"CHF", "švicarski franak"}, {"GBP", "britanska funta"}, {"TRY", "turska lira"},
             {"RSD", "srpski dinar"}, {"HUF", "mađarska forinta"}, {"SEK", "švedska kruna"}, {"NOK", "norveška kruna"},
             {"DKK", "danska kruna"}, {"CAD", "kanadski dolar"}, {"AUD", "australski dolar"}, {"JPY", "japanski jen"}, {"CNY", "kineski juan"}};
@@ -48,8 +48,8 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
     public UsefulScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        SpanGrid grid = new SpanGrid(c, 3, Ui.dp(c, 10));
-        int pad = Ui.dp(c, 12);
+        SpanGrid grid = new SpanGrid(c, 3, Ui.gap(c));
+        int pad = Ui.pagePad(c);
         grid.setPadding(pad, pad, pad, pad);
         grid.setRows(-1, Ui.dp(c, 200));
         rates = panel(c);
@@ -100,8 +100,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
         }
         if (data != null) {
             JSONObject r = data.optJSONObject("rates");
-            for (String code : Settings.of(c).getString("currencies").isEmpty() ? new String[] {"USD", "CHF", "GBP"}
-                    : Settings.of(c).getString("currencies").split(",")) {
+            for (String code : Settings.of(c).currencies()) {
                 JSONObject x = r == null ? null : r.optJSONObject(code.trim());
                 if (x == null) continue;
                 double perUnit = x.optDouble("middle") / Math.max(1, x.optInt("units", 1));
@@ -137,7 +136,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
         return r;
     }
 
-    private static String currencyName(String code) {
+    public static String currencyName(String code) {
         for (String[] n : CURRENCY_NAMES) if (n[0].equals(code)) return n[1];
         return "";
     }

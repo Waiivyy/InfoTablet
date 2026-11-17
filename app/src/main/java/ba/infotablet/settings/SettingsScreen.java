@@ -5,52 +5,88 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import ba.infotablet.Settings;
 import ba.infotablet.security.Pin;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
-import ba.infotablet.ui.QrView;
 import ba.infotablet.ui.Refreshable;
 import ba.infotablet.ui.Ui;
 import ba.infotablet.util.Clock;
 import ba.infotablet.web.WebServer;
 
 /**
- * Postavke, behind the PIN (set on first use). Locks again whenever the screen is left. For now it
- * holds the Wi-Fi page (address and QR code) and the PIN; the other settings follow.
+ * Postavke, behind the PIN (set on first use). Sections on the left, their settings on the right.
+ * Stays open while a change rebuilds the screens (theme, tiles) and locks again when the screen is
+ * left or after two idle minutes (the return to Početna).
  */
 public final class SettingsScreen extends FrameLayout implements Refreshable {
 
+    /** Implemented by the activity: apply a change (it may rebuild every view, this one included). */
+    public interface Host {
+        void onSettingsChanged();
+
+        /** Shows the night brightness for a few seconds, to try a level. */
+        void previewNight();
+    }
+
+    static final String[] SECTIONS = {"Izgled", "Početni ekran", "Noć", "Lokacija", "Sadržaj", "Izvori podataka",
+            "Wi-Fi stranica", "Sigurnost i podaci", "Ažuriranja", "O aplikaciji"};
+
     private enum Mode { NEW_PIN, CONFIRM_PIN, ENTER_PIN, CHANGE_OLD, OPEN }
 
-    private final Palette p;
+    // Kept across rebuilds of the activity's views, cleared by lock().
+    private static boolean unlocked;
+    private static int section;
+    private static int scrollY;
+
+    final Palette p;
+    final Host host;
     private Mode mode;
     private String firstPin;
-    private String shownAddress = "?";
+    private PinPad currentPad;
+    private ScrollView scroll;
+    private LinearLayout body;
+    private LinearLayout nav;
+    private String shownKey = "";
 
-    public SettingsScreen(Context c, Palette p) {
+    public SettingsScreen(Context c, Palette p, Host host) {
         super(c);
         this.p = p;
-        mode = Settings.of(c).hasPin() ? Mode.ENTER_PIN : Mode.NEW_PIN;
+        this.host = host;
+        mode = unlocked ? Mode.OPEN : Settings.of(c).hasPin() ? Mode.ENTER_PIN : Mode.NEW_PIN;
         show();
+    }
+
+    /** Called when Postavke are left: the PIN is needed again. */
+    public static void lock() {
+        unlocked = false;
+        scrollY = 0;
     }
 
     @Override
     public void refresh(long now) {
-        // The address can change when the Wi-Fi reconnects.
-        if (mode == Mode.OPEN && !String.valueOf(WebServer.address(getContext())).equals(shownAddress)) show();
+        // Live parts (source status, Wi-Fi address) follow the data; rebuild only when they change.
+        if (mode != Mode.OPEN) return;
+        String key = Sections.liveKey(this, section);
+        if (!key.equals(shownKey)) {
+            scrollY = scroll.getScrollY();
+            showSection(section, true);
+        }
     }
 
     private void show() {
         removeAllViews();
         if (mode == Mode.OPEN) {
-            showSettings();
+            showOpen();
         } else {
             showPad();
         }
     }
+
+    // ---- PIN ----
 
     private void showPad() {
         Context c = getContext();
@@ -59,47 +95,45 @@ public final class SettingsScreen extends FrameLayout implements Refreshable {
         panel.setGravity(Gravity.CENTER);
         panel.setBackgroundDrawable(Ui.panel(c, p));
         PinPad pad = new PinPad(c, p, this::onPin);
-        String title, hint;
         switch (mode) {
             case NEW_PIN:
-                title = "Postavite PIN za Postavke";
-                hint = "4 do 8 cifara. Isti PIN otvara i Wi-Fi stranicu za podsjetnike.";
+                pad.setTitle("Postavite PIN za Postavke");
+                pad.setHint("4 do 8 cifara. Isti PIN otvara i Wi-Fi stranicu za podsjetnike.");
                 break;
             case CONFIRM_PIN:
-                title = "Ponovite isti PIN";
-                hint = "Za potvrdu.";
+                pad.setTitle("Ponovite isti PIN");
+                pad.setHint("Za potvrdu.");
                 break;
             case CHANGE_OLD:
-                title = "Unesite sadašnji PIN";
-                hint = "Zatim birate novi.";
+                pad.setTitle("Unesite sadašnji PIN");
+                pad.setHint("Zatim birate novi.");
                 break;
             default:
-                title = "Unesite PIN";
-                hint = "Postavke su zaključane da se ništa ne promijeni slučajno.";
+                pad.setTitle("Unesite PIN");
+                pad.setHint("Postavke su zaključane da se ništa ne promijeni slučajno.");
         }
-        pad.setTitle(title);
-        pad.setHint(hint);
         panel.addView(pad);
         currentPad = pad;
-        int m = Ui.dp(c, 12);
+        int m = Ui.pagePad(c);
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         lp.setMargins(m, m, m, m);
         addView(panel, lp);
         long locked = Pin.lockedFor(Clock.now());
-        if (locked > 0) pad.showMessage("Previše pogrešnih pokušaja. Sačekajte " + Math.max(1, (locked + 59_999) / 60_000) + " min.");
+        if (locked > 0) pad.showMessage(lockedText(locked));
     }
 
-    private PinPad currentPad;
+    private static String lockedText(long ms) {
+        return "Previše pogrešnih pokušaja. Sačekajte " + Math.max(1, (ms + 59_999) / 60_000) + " min.";
+    }
 
     private void onPin(String pin) {
         Settings s = Settings.of(getContext());
-        PinPad pad = currentPad;
         long now = Clock.now();
         switch (mode) {
             case NEW_PIN:
                 if (!Pin.valid(pin)) {
-                    pad.showMessage("PIN mora imati od 4 do 8 cifara");
-                    pad.clear();
+                    currentPad.showMessage("PIN mora imati od 4 do 8 cifara");
+                    currentPad.clear();
                     return;
                 }
                 firstPin = pin;
@@ -117,118 +151,117 @@ public final class SettingsScreen extends FrameLayout implements Refreshable {
                 s.setPinHash(Pin.hash(pin));
                 firstPin = null;
                 WebServer.update(getContext());
-                mode = Mode.OPEN;
-                show();
+                open();
                 return;
             case CHANGE_OLD:
             case ENTER_PIN:
                 if (Pin.attempt(pin, s.pinHash(), now)) {
-                    mode = mode == Mode.CHANGE_OLD ? Mode.NEW_PIN : Mode.OPEN;
-                    show();
+                    if (mode == Mode.CHANGE_OLD) {
+                        mode = Mode.NEW_PIN;
+                        show();
+                    } else {
+                        open();
+                    }
                 } else {
                     long locked = Pin.lockedFor(now);
-                    pad.showMessage(locked > 0 ? "Previše pogrešnih pokušaja. Sačekajte " + Math.max(1, (locked + 59_999) / 60_000) + " min."
-                            : "Pogrešan PIN");
-                    pad.clear();
+                    currentPad.showMessage(locked > 0 ? lockedText(locked) : "Pogrešan PIN");
+                    currentPad.clear();
                 }
                 return;
             default:
         }
     }
 
-    private void showSettings() {
-        Context c = getContext();
-        String address = WebServer.address(c);
-        shownAddress = String.valueOf(address);
-        Settings s = Settings.of(c);
-        boolean on = s.webEnabled() && WebServer.isRunning();
+    private void open() {
+        unlocked = true;
+        mode = Mode.OPEN;
+        show();
+    }
 
+    void changePin() {
+        unlocked = false;
+        mode = Mode.CHANGE_OLD;
+        show();
+    }
+
+    void lockNow() {
+        lock();
+        mode = Mode.ENTER_PIN;
+        show();
+    }
+
+    // ---- Sections ----
+
+    private void showOpen() {
+        Context c = getContext();
         LinearLayout root = new LinearLayout(c);
-        int pad = Ui.dp(c, 12);
+        int pad = Ui.pagePad(c);
         root.setPadding(pad, pad, pad, pad);
 
-        LinearLayout left = new LinearLayout(c);
-        left.setOrientation(LinearLayout.VERTICAL);
-        left.setBackgroundDrawable(Ui.panel(c, p));
-        left.setPadding(Ui.dp(c, 18), Ui.dp(c, 13), Ui.dp(c, 18), Ui.dp(c, 16));
-        left.addView(Ui.label(c, p, "Wi-Fi stranica za podsjetnike"));
-
-        TextView state = Ui.text(c, 20, Fonts.medium(), on && address != null ? p.ok : p.fg2);
-        state.setText(!s.webEnabled() ? "Isključena" : address == null ? "Nema Wi-Fi veze" : on ? "Uključena" : "Ne radi");
-        LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        sl.topMargin = Ui.dp(c, 14);
-        left.addView(state, sl);
-
-        TextView about = Ui.text(c, 16, Fonts.regular(), p.fg);
-        about.setLineSpacing(Ui.dp(c, 3), 1f);
-        about.setText("Podsjetnike možete dodavati i mijenjati s telefona. Telefon mora biti na istoj kućnoj Wi-Fi mreži. "
-                + "Otvorite adresu u pregledniku ili skenirajte kod kamerom, pa se prijavite istim PIN-om.");
-        LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        al.topMargin = Ui.dp(c, 10);
-        left.addView(about, al);
-
-        TextView note = Ui.text(c, 13.5f, Fonts.regular(), p.fg2);
-        note.setLineSpacing(Ui.dp(c, 2), 1f);
-        note.setText("Stranica radi samo unutar kućne mreže i nije dostupna s interneta.");
-        LinearLayout.LayoutParams nl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        nl.topMargin = Ui.dp(c, 10);
-        left.addView(note, nl);
-
-        left.addView(new View(c), new LinearLayout.LayoutParams(1, 0, 1f));
-        LinearLayout actions = new LinearLayout(c);
-        TextView toggle = Ui.button(c, p, s.webEnabled() ? "Isključi stranicu" : "Uključi stranicu", false, 16);
-        toggle.setOnClickListener(v -> {
-            s.setWebEnabled(!s.webEnabled());
-            WebServer.update(getContext());
-            show();
-        });
-        actions.addView(toggle, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, Ui.dp(c, 50)));
-        TextView change = Ui.button(c, p, "Promijeni PIN", false, 16);
-        change.setOnClickListener(v -> {
-            mode = Mode.CHANGE_OLD;
-            show();
-        });
-        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, Ui.dp(c, 50));
-        cl.leftMargin = Ui.dp(c, 10);
-        actions.addView(change, cl);
-        actions.addView(new View(c), new LinearLayout.LayoutParams(0, 1, 1f));
-        TextView lock = Ui.button(c, p, "Zaključaj", false, 16);
-        lock.setOnClickListener(v -> {
-            mode = Mode.ENTER_PIN;
-            show();
-        });
-        actions.addView(lock, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, Ui.dp(c, 50)));
-        left.addView(actions);
-        root.addView(left, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
+        nav = new LinearLayout(c);
+        nav.setOrientation(LinearLayout.VERTICAL);
+        nav.setBackgroundDrawable(Ui.panel(c, p));
+        nav.setPadding(Ui.dp(c, 8), Ui.dp(c, 8), Ui.dp(c, 8), Ui.dp(c, 8));
+        root.addView(nav, new LinearLayout.LayoutParams(Ui.dp(c, 204), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout right = new LinearLayout(c);
         right.setOrientation(LinearLayout.VERTICAL);
-        right.setGravity(Gravity.CENTER_HORIZONTAL);
         right.setBackgroundDrawable(Ui.panel(c, p));
-        right.setPadding(Ui.dp(c, 18), Ui.dp(c, 13), Ui.dp(c, 18), Ui.dp(c, 16));
-        TextView rl = Ui.label(c, p, "Adresa");
-        right.addView(rl, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        if (on && address != null) {
-            QrView qr = new QrView(c);
-            qr.setText(address);
-            LinearLayout.LayoutParams ql = new LinearLayout.LayoutParams(Ui.dp(c, 300), 0, 1f);
-            ql.topMargin = Ui.dp(c, 10);
-            right.addView(qr, ql);
-            TextView addr = Ui.text(c, 20, Fonts.monoMedium(), p.fg);
-            addr.setText(ba.infotablet.ui.NarrowSpan.numeric(address.replace("http://", "")));
-            addr.setGravity(Gravity.CENTER);
-            LinearLayout.LayoutParams adl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            adl.topMargin = Ui.dp(c, 12);
-            right.addView(addr, adl);
-        } else {
-            TextView none = Ui.text(c, 16, Fonts.regular(), p.fg2);
-            none.setText(!s.webEnabled() ? "Stranica je isključena." : "Kad se tablet spoji na Wi-Fi, ovdje se pojavi adresa i kod.");
-            none.setGravity(Gravity.CENTER);
-            right.addView(none, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-        }
-        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(Ui.dp(c, 372), LinearLayout.LayoutParams.MATCH_PARENT);
-        rp.leftMargin = Ui.dp(c, 10);
-        root.addView(right, rp);
+        scroll = new ScrollView(c);
+        scroll.setFadingEdgeLength(0);
+        scroll.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        body = new LinearLayout(c);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(Ui.dp(c, 20), Ui.dp(c, 14), Ui.dp(c, 20), Ui.dp(c, 16));
+        scroll.addView(body);
+        right.addView(scroll, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
+        rl.leftMargin = Ui.gap(c);
+        root.addView(right, rl);
         addView(root, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        showSection(section, true);
+    }
+
+    private void bindNav() {
+        Context c = getContext();
+        nav.removeAllViews();
+        for (int i = 0; i < SECTIONS.length; i++) {
+            final int index = i;
+            boolean on = i == section;
+            TextView t = Ui.text(c, 15.5f, Fonts.medium(), on ? p.accent : p.fg);
+            t.setText(SECTIONS[i]);
+            t.setGravity(Gravity.CENTER_VERTICAL);
+            t.setSingleLine(true);
+            t.setPadding(Ui.dp(c, 12), 0, Ui.dp(c, 8), 0);
+            if (on) t.setBackgroundDrawable(Ui.rounded(c, p.accentTint, 0, 6));
+            t.setClickable(true);
+            t.setOnClickListener(v -> {
+                scrollY = 0;
+                showSection(index, false);
+            });
+            nav.addView(t, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        }
+    }
+
+    /** Builds a section; keepScroll restores the scroll position after a change. */
+    void showSection(int index, boolean keepScroll) {
+        section = index;
+        bindNav();
+        body.removeAllViews();
+        TextView title = Ui.label(getContext(), p, SECTIONS[index]);
+        title.setPadding(0, 0, 0, Ui.dp(getContext(), 4));
+        body.addView(title);
+        Sections.build(this, index, body);
+        shownKey = Sections.liveKey(this, index);
+        final int y = keepScroll ? scrollY : 0;
+        scroll.post(() -> scroll.scrollTo(0, y));
+    }
+
+    /** A setting changed: remember the scroll position, let the activity apply it, then redraw this section. */
+    void changed() {
+        scrollY = scroll == null ? 0 : scroll.getScrollY();
+        host.onSettingsChanged();
+        // If the activity rebuilt its views, this screen is gone and a new one shows the section.
+        if (getWindowToken() != null && mode == Mode.OPEN) showSection(section, true);
     }
 }

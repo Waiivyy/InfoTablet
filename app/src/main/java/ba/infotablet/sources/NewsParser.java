@@ -120,6 +120,22 @@ public final class NewsParser {
         return false;
     }
 
+    /**
+     * Crime and fatal accidents that portals file outside their crime section, recognised by words
+     * in the headline and lead (Bosnian, without diacritics). Used only to hide such items when
+     * "Crna hronika" is switched off, so it errs on the side of hiding.
+     */
+    private static final java.util.regex.Pattern CRIME_WORDS = java.util.regex.Pattern.compile(
+            "\\b(ubi(o|la|li|jen|jena|jeni|jeno|stvo|stva|stvu|ce|ca|ju)|ubist|poginu|smrtno strada|stradao|stradala|"
+                    + "pucnjav|upucan|izboden|izbo(o|la|li)|nozem|silova|pljack|razbojni|lesh?\\b|bezivotn|tijelo (je )?pronad|"
+                    + "zlostavlj|pedofil|otmic|ote(o|la|li)\\b|femicid|samoubist|uhapsen|uhapsi)");
+
+    public static boolean soundsLikeCrime(String text) {
+        if (text == null || text.isEmpty()) return false;
+        String t = text.toLowerCase(Locale.ROOT).replace('č', 'c').replace('ć', 'c').replace('š', 's').replace('ž', 'z').replace("đ", "dj");
+        return CRIME_WORDS.matcher(t).find();
+    }
+
     /** App categories: crna, sport, ekonomija, sarajevo, bih, svijet, kultura, tech, ostalo. */
     public static String category(String link, List<String> categories) {
         if (isCrime(link, categories)) return "crna";

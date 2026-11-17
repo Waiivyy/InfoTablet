@@ -27,36 +27,46 @@ import ba.infotablet.news.NewsScreen;
 import ba.infotablet.reminders.RemindersScreen;
 import ba.infotablet.settings.SettingsScreen;
 import ba.infotablet.sport.SportScreen;
-import ba.infotablet.useful.UsefulScreen;
 import ba.infotablet.sync.Scheduler;
 import ba.infotablet.ui.Busy;
 import ba.infotablet.ui.Fonts;
+import ba.infotablet.ui.GridDrawable;
 import ba.infotablet.ui.Palette;
 import ba.infotablet.ui.Rail;
 import ba.infotablet.ui.Refreshable;
 import ba.infotablet.ui.StatusLine;
+import ba.infotablet.ui.Theme;
 import ba.infotablet.ui.Ui;
+import ba.infotablet.useful.UsefulScreen;
 import ba.infotablet.util.Clock;
 import ba.infotablet.util.Fmt;
 import ba.infotablet.weather.WeatherScreen;
 
 /**
  * The only activity. It is also the device's home screen, so it never finishes: Back and Home
- * lead to Početna, and two minutes without touch return there as well.
+ * lead to Početna, and two minutes without touch return there as well. It switches between the
+ * light and dark palette at sunrise and sunset and dims the screen at night (never off).
  */
-public final class MainActivity extends Activity implements Rail.Listener, Scheduler.Listener {
+public final class MainActivity extends Activity implements Rail.Listener, Scheduler.Listener, SettingsScreen.Host {
 
     private static final long IDLE_RETURN_MS = 2 * 60 * 1000L;
     /** With unsaved input (an open reminder editor) the return waits up to this long. */
     private static final long IDLE_RETURN_BUSY_MS = 10 * 60 * 1000L;
     private static final long LOW_PROFILE_DELAY_MS = 3000L;
+    /** A touch at night brightens the screen for this long. */
+    private static final long NIGHT_TOUCH_MS = 60_000L;
+    private static final int SETTINGS_TAB = 8;
 
     private final Handler handler = new Handler();
     private final Runnable idleReturn = this::onIdle;
-    private long lastTouchAt;
     private final Runnable lowProfile = this::applyLowProfile;
+    private final Runnable applyBrightness = this::applyBrightness;
+    private long lastTouchAt;
+    private long brightUntil;
+    private long previewUntil;
 
     private Palette palette = Palette.LIGHT;
+    private String lookKey = "";
     private Rail rail;
     private FrameLayout content;
     private StatusLine status;
@@ -68,8 +78,11 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
 
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context c, Intent i) {
-            refreshScreen();
+            // A sunrise or sunset switch waits while someone is typing (it would rebuild the editor).
+            boolean busy = screen instanceof Busy && ((Busy) screen).busy();
+            if (busy || !applyLook()) refreshScreen();
             refreshStatus();
+            applyBrightness();
             AlarmScheduler.checkRinging(c); // safety net if a system alarm was missed
         }
     };
@@ -96,16 +109,41 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 handler.postDelayed(lowProfile, LOW_PROFILE_DELAY_MS);
             }
         });
-        buildUi();
+        applyLook();
         onTab(0);
+    }
+
+    /**
+     * Rebuilds every view when the palette or a look setting changed (sunset, sunrise, Postavke).
+     * Returns true when it rebuilt.
+     */
+    private boolean applyLook() {
+        long now = Clock.now();
+        String key = Theme.lookKey(this, now);
+        if (key.equals(lookKey)) return false;
+        lookKey = key;
+        Theme.configureUi(this);
+        palette = Theme.palette(this, now);
+        int keep = tab < 0 ? 0 : tab;
+        buildUi();
+        tab = -1;
+        onTab(Settings.of(this).tabVisible(keep) ? keep : 0);
+        return true;
     }
 
     private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.HORIZONTAL);
-        root.setBackgroundColor(palette.bg);
+        if (palette.grid) {
+            root.setBackgroundDrawable(new GridDrawable(palette.bg, palette.dark ? 0xFF121920 : 0xFFDCE1E6, Ui.dp(this, 24)));
+        } else {
+            root.setBackgroundColor(palette.bg);
+        }
 
-        rail = new Rail(this, palette, this);
+        boolean[] visible = new boolean[Rail.LABELS.length];
+        Settings s = Settings.of(this);
+        for (int i = 0; i < visible.length; i++) visible[i] = s.tabVisible(i);
+        rail = new Rail(this, palette, this, visible);
         root.addView(rail, new LinearLayout.LayoutParams(Ui.dp(this, 92), LinearLayout.LayoutParams.MATCH_PARENT));
         root.addView(Ui.hairline(this, palette.line), new LinearLayout.LayoutParams(Math.max(1, Ui.dp(this, 1)), LinearLayout.LayoutParams.MATCH_PARENT));
 
@@ -119,11 +157,14 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
         root.addView(column, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
 
         setContentView(root);
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(palette.bg));
+        refreshStatus();
     }
 
     @Override
     public void onTab(int index) {
         if (index != tab) {
+            if (tab == SETTINGS_TAB) SettingsScreen.lock(); // leaving Postavke locks them again
             tab = index;
             rail.select(index);
             content.removeAllViews();
@@ -149,9 +190,9 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 screen = n;
                 view = n;
             } else if (index == 5) {
-                SportScreen s = new SportScreen(this, palette);
-                screen = s;
-                view = s;
+                SportScreen sp = new SportScreen(this, palette);
+                screen = sp;
+                view = sp;
             } else if (index == 6) {
                 RemindersScreen r = new RemindersScreen(this, palette);
                 screen = r;
@@ -161,7 +202,7 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 screen = u;
                 view = u;
             } else {
-                SettingsScreen st = new SettingsScreen(this, palette);
+                SettingsScreen st = new SettingsScreen(this, palette, this);
                 screen = st;
                 view = st;
             }
@@ -169,6 +210,21 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
             refreshScreen();
         }
         restartIdleTimer();
+    }
+
+    /** Postavke changed something: rebuild if the look changed, otherwise just redraw. */
+    @Override
+    public void onSettingsChanged() {
+        if (!applyLook()) refreshScreen();
+        refreshStatus();
+        applyBrightness();
+    }
+
+    @Override
+    public void previewNight() {
+        previewUntil = System.currentTimeMillis() + 8000;
+        brightUntil = 0;
+        applyBrightness();
     }
 
     @Override
@@ -196,9 +252,10 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
 
         Scheduler.get(this).addListener(this);
         wifiOk = isWifiConnected();
-        refreshScreen();
+        if (!applyLook()) refreshScreen();
         refreshStatus();
         applyLowProfile();
+        applyBrightness();
         restartIdleTimer();
     }
 
@@ -209,6 +266,7 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
         unregisterReceiver(systemReceiver);
         handler.removeCallbacks(idleReturn);
         handler.removeCallbacks(lowProfile);
+        handler.removeCallbacks(applyBrightness);
         super.onPause();
     }
 
@@ -227,7 +285,13 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) restartIdleTimer();
+        if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            restartIdleTimer();
+            if (Theme.night(this, Clock.now())) {
+                brightUntil = System.currentTimeMillis() + NIGHT_TOUCH_MS;
+                applyBrightness();
+            }
+        }
         return super.dispatchTouchEvent(ev);
     }
 
@@ -235,6 +299,22 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) applyLowProfile();
+    }
+
+    /** Night: the chosen low brightness (never off); a touch brightens for a minute. Day: the system setting. */
+    private void applyBrightness() {
+        handler.removeCallbacks(applyBrightness);
+        long realNow = System.currentTimeMillis();
+        boolean preview = realNow < previewUntil;
+        boolean dim = preview || (Theme.night(this, Clock.now()) && realNow >= brightUntil);
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        float want = dim ? Math.max(0.05f, Settings.of(this).nightBrightness() / 100f) : WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+        if (lp.screenBrightness != want) {
+            lp.screenBrightness = want;
+            getWindow().setAttributes(lp);
+        }
+        long next = Math.max(preview ? previewUntil : 0, realNow < brightUntil ? brightUntil : 0);
+        if (next > realNow) handler.postDelayed(applyBrightness, next - realNow + 50);
     }
 
     private void restartIdleTimer() {
@@ -263,6 +343,7 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
     }
 
     private void refreshStatus() {
+        if (status == null) return;
         Scheduler.Summary s = Scheduler.get(this).summary();
         String sync = s.lastOkAt == 0 ? "--:--" : Fmt.hhmm(s.lastOkAt);
         int level = (!wifiOk || s.ok < s.total) ? 1 : 0;

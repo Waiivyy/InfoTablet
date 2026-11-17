@@ -48,7 +48,6 @@ final class NewsItems {
 
     static List<Entry> load(Context c, long now, String category) {
         Settings s = Settings.of(c);
-        boolean hideCrime = s.hideCrime();
         List<Entry> out = new ArrayList<Entry>();
         for (Portal p : Portal.values()) {
             NewsSource src = new NewsSource(p);
@@ -60,7 +59,9 @@ final class NewsItems {
                 JSONArray items = new JSONObject(st.payload).getJSONArray("items");
                 for (int i = 0; i < items.length(); i++) {
                     JSONObject it = items.getJSONObject(i);
-                    if (hideCrime && it.optBoolean("crime")) continue;
+                    if (s.newsCategoryHidden("crna") && (it.optBoolean("crime")
+                            || ba.infotablet.sources.NewsParser.soundsLikeCrime(it.optString("title") + " " + it.optString("lead")))) continue;
+                    if (s.newsCategoryHidden(it.optString("cat"))) continue;
                     if (category != null && !category.equals(it.optString("cat"))) continue;
                     out.add(new Entry(it, p.label, f.stale, f.note));
                 }
@@ -89,7 +90,7 @@ final class NewsItems {
 
     /** Cache timestamps of all portals plus the filters: the screen only rebuilds when this changes. */
     static String signature(Context c, String category) {
-        StringBuilder b = new StringBuilder(category == null ? "all" : category).append(Settings.of(c).hideCrime());
+        StringBuilder b = new StringBuilder(category == null ? "all" : category).append(Settings.of(c).getString("news_hidden"));
         for (Portal p : Portal.values()) {
             SourceState st = Cache.get(c, NewsSource.idOf(p));
             b.append('|').append(st.okAt).append(':').append(st.failCount);

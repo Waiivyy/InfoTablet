@@ -21,7 +21,27 @@ import java.util.Locale;
 /** Small view factory so every screen uses the same type scale, panels and labels. */
 public final class Ui {
 
+    /** Body text grows by this factor with "Veća slova"; big numerals (30 dp and up) keep their size. */
+    private static volatile float textScale = 1f;
+    /** "Zbijeno": smaller page margins and gaps between cards. */
+    private static volatile boolean compact;
+
     private Ui() {}
+
+    public static void configure(boolean largeText, boolean compactLayout) {
+        textScale = largeText ? 1.1f : 1f;
+        compact = compactLayout;
+    }
+
+    /** Margin around the cards of a screen. */
+    public static int pagePad(Context c) {
+        return dp(c, compact ? 7 : 12);
+    }
+
+    /** Gap between cards. */
+    public static int gap(Context c) {
+        return dp(c, compact ? 6 : 10);
+    }
 
     public static int dp(Context c, float v) {
         return Math.round(v * c.getResources().getDisplayMetrics().density);
@@ -42,7 +62,7 @@ public final class Ui {
 
     public static TextView text(Context c, float sizeDp, Typeface tf, int color) {
         TextView t = new TextView(c);
-        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, sizeDp);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, sizeDp < 30 ? sizeDp * textScale : sizeDp);
         t.setTypeface(tf);
         t.setTextColor(color);
         t.setIncludeFontPadding(false);

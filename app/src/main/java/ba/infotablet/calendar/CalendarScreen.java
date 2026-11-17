@@ -60,14 +60,14 @@ public final class CalendarScreen extends FrameLayout implements Refreshable {
     public CalendarScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        int pad = Ui.dp(c, 12);
+        int pad = Ui.pagePad(c);
         LinearLayout root = new LinearLayout(c);
         root.setPadding(pad, pad, pad, pad);
         month = panel(c);
         root.addView(month, new LinearLayout.LayoutParams(Ui.dp(c, 430), LinearLayout.LayoutParams.MATCH_PARENT));
         list = panel(c);
         LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
-        ll.leftMargin = Ui.dp(c, 10);
+        ll.leftMargin = Ui.gap(c);
         root.addView(list, ll);
         addView(root, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
     }

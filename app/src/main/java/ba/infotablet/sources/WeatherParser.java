@@ -69,4 +69,24 @@ public final class WeatherParser {
         out.put("daily", daily);
         return out;
     }
+
+    /**
+     * The second-city tile: {current:{t,code,isDay}, max, min, utcOffset} from a one-day Open-Meteo
+     * forecast requested with timezone=auto (so the day and the offset are the city's own).
+     */
+    public static JSONObject secondCity(String raw) throws JSONException {
+        JSONObject in = new JSONObject(raw);
+        JSONObject cur = in.getJSONObject("current");
+        JSONObject daily = in.getJSONObject("daily");
+        JSONObject c = new JSONObject()
+                .put("time", cur.getLong("time") * 1000L)
+                .put("t", cur.getDouble("temperature_2m"))
+                .put("code", cur.getInt("weather_code"))
+                .put("isDay", cur.optInt("is_day", 1));
+        return new JSONObject()
+                .put("current", c)
+                .put("max", daily.getJSONArray("temperature_2m_max").getDouble(0))
+                .put("min", daily.getJSONArray("temperature_2m_min").getDouble(0))
+                .put("utcOffset", in.optLong("utc_offset_seconds") * 1000L);
+    }
 }

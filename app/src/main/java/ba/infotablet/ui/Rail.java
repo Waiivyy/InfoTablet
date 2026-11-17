@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 import ba.infotablet.R;
 
-/** The tab bar on the left: icon above label, one tab highlighted. */
+/** The tab bar on the left: icon above label, one tab highlighted. Hidden tabs (Postavke) are left out. */
 public final class Rail extends LinearLayout {
 
     public interface Listener { void onTab(int index); }
@@ -27,7 +27,7 @@ public final class Rail extends LinearLayout {
     private final TextView[] labels = new TextView[LABELS.length];
     private int selected = -1;
 
-    public Rail(Context c, Palette p, final Listener listener) {
+    public Rail(Context c, Palette p, final Listener listener, boolean[] visible) {
         super(c);
         this.p = p;
         setOrientation(VERTICAL);
@@ -56,6 +56,7 @@ public final class Rail extends LinearLayout {
 
             LayoutParams tl = new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f);
             tl.bottomMargin = i < LABELS.length - 1 ? Ui.dp(c, 2) : 0;
+            if (!visible[i]) tab.setVisibility(GONE);
             addView(tab, tl);
             tabs[i] = tab;
             icons[i] = icon;

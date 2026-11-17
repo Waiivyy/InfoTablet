@@ -17,10 +17,16 @@ import ba.infotablet.ui.Ui;
 import ba.infotablet.util.BsDate;
 import ba.infotablet.util.Clock;
 
-/** The large clock and date on Početna. Updated once a minute by the activity (ACTION_TIME_TICK). */
+/**
+ * The large clock and date on Početna. Updated once a minute by the activity (ACTION_TIME_TICK),
+ * every second when seconds are switched on. 24-hour by default; the 12-hour clock shows
+ * "prije podne" or "poslije podne" in the card's top-right corner.
+ */
 public final class ClockPanel extends LinearLayout {
 
     private final Palette p;
+    private final boolean h24, seconds;
+    private final TextView period;
     private final TextView time;
     private final TextView date;
     private final LinearLayout nextRow;
@@ -36,13 +42,25 @@ public final class ClockPanel extends LinearLayout {
         setBackgroundDrawable(Ui.panel(c, p));
         setPadding(Ui.dp(c, 22), Ui.dp(c, 12), Ui.dp(c, 22), Ui.dp(c, 12));
 
+        ba.infotablet.Settings settings = ba.infotablet.Settings.of(c);
+        h24 = settings.clock24h();
+        seconds = settings.clockSeconds();
+        // The time, with the 12-hour clock's half of the day in the free top-right corner.
+        android.widget.FrameLayout timeBox = new android.widget.FrameLayout(c);
         time = Ui.text(c, 150, Fonts.monoLight(), p.fg);
         time.setSingleLine(true);
         time.setGravity(Gravity.START);
-        LayoutParams tl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        timeBox.addView(time, new android.widget.FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        period = Ui.label(c, p, "");
+        android.widget.FrameLayout.LayoutParams pl = new android.widget.FrameLayout.LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
+        LayoutParams tl = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         tl.leftMargin = -Ui.dp(c, 5); // optical alignment of the large digits with the date below
         Ui.trimDigits(time, tl);
-        addView(time, tl);
+        pl.topMargin = -tl.topMargin + Ui.dp(c, 2); // level with the top of the digits
+        period.setVisibility(h24 ? GONE : VISIBLE);
+        timeBox.addView(period, pl);
+        addView(timeBox, tl);
 
         date = Ui.text(c, 28, Fonts.regular(), p.fg);
         date.setSingleLine(true);
@@ -73,14 +91,44 @@ public final class ClockPanel extends LinearLayout {
         update();
     }
 
+    private final Runnable tick = new Runnable() {
+        @Override public void run() {
+            update();
+            postDelayed(this, 1000 - System.currentTimeMillis() % 1000 + 5);
+        }
+    };
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (seconds) post(tick);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        removeCallbacks(tick);
+        super.onDetachedFromWindow();
+    }
+
     public void update() {
         Calendar now = Calendar.getInstance();
         now.setTimeInMillis(Clock.now());
-        String t = BsDate.hhmm(now);
+        int hour = now.get(Calendar.HOUR_OF_DAY);
+        String t = h24 ? BsDate.hhmm(now)
+                : (hour % 12 == 0 ? 12 : hour % 12) + ":" + String.format(java.util.Locale.ROOT, "%02d", now.get(Calendar.MINUTE));
+        String sec = seconds ? String.format(java.util.Locale.ROOT, ":%02d", now.get(Calendar.SECOND)) : "";
         String d = BsDate.longDate(now);
-        if (!t.equals(shownTime)) {
-            time.setText(NarrowSpan.numeric(t));
-            shownTime = t;
+        if (!(t + sec).equals(shownTime)) {
+            android.text.SpannableStringBuilder b = new android.text.SpannableStringBuilder(NarrowSpan.numeric(t));
+            if (seconds) {
+                int start = b.length();
+                b.append(NarrowSpan.numeric(sec));
+                b.setSpan(new android.text.style.AbsoluteSizeSpan(Ui.dp(getContext(), 56)), start, b.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                b.setSpan(new android.text.style.ForegroundColorSpan(p.fg2), start, b.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            time.setText(b);
+            shownTime = t + sec;
+            if (!h24) period.setText(ba.infotablet.ui.TrackingSpan.of(hour < 12 ? "PRIJE PODNE" : "POSLIJE PODNE", 0.08f));
         }
         if (!d.equals(shownDate)) {
             date.setText(d);

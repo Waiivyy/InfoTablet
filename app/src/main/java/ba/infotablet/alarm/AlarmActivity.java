@@ -36,7 +36,7 @@ public final class AlarmActivity extends Activity {
     private static volatile long ringMs = Agenda.RING_MS;
 
     private final Handler handler = new Handler();
-    private final Palette p = Palette.LIGHT;
+    private Palette p;
     private AlarmSound sound;
     private Reminder current;
     private long currentDue;
@@ -59,6 +59,8 @@ public final class AlarmActivity extends Activity {
         super.onCreate(saved);
         showing = true;
         Fonts.load(this);
+        ba.infotablet.ui.Theme.configureUi(this);
+        p = ba.infotablet.ui.Theme.palette(this, Clock.now());
         WindowManager.LayoutParams lp = getWindow().getAttributes();
         lp.screenBrightness = 1f;
         getWindow().setAttributes(lp);

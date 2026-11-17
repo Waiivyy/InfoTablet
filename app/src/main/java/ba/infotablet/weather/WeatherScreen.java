@@ -52,8 +52,8 @@ public final class WeatherScreen extends FrameLayout implements Refreshable {
     public WeatherScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        grid = new SpanGrid(c, 3, Ui.dp(c, 10));
-        int pad = Ui.dp(c, 12);
+        grid = new SpanGrid(c, 3, Ui.gap(c));
+        int pad = Ui.pagePad(c);
         grid.setPadding(pad, pad, pad, pad);
         warnings = panel(c);
         hourly = panel(c);

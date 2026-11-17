@@ -38,10 +38,11 @@ Verified on 2026-11-16/17 by fetching every source live. This file records what 
 
 - **URL:** `https://api.open-meteo.com/v1/forecast?latitude=43.8563&longitude=18.4131&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation,is_day,pressure_msl&hourly=temperature_2m,weather_code,precipitation_probability,precipitation,snowfall,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,precipitation_sum,snowfall_sum,uv_index_max&timezone=Europe%2FSarajevo&forecast_days=7&forecast_hours=24`
 - **Response:** about 3 KB. `current` (15-minute resolution), `hourly` arrays (24 entries from the current hour), `daily` arrays (7 days). Times are local ISO strings without offset (`2026-11-17T06:43`) because `timezone` is set. Grid elevation 543 m.
-- **Used for:** current conditions, next 12 hours, 7 days, sunrise and sunset (also drive the light/dark theme switch and night dimming), precipitation probability, snowfall, UV. A second city (for example Munich) is the same call with other coordinates.
+- **Used for:** current conditions, next 12 hours, 7 days, sunrise and sunset (also drive the light/dark theme switch and night dimming), precipitation probability, snowfall, UV. A second city (for example Munich) is a smaller call with other coordinates: `current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1`, once an hour, only when a second city is chosen. `timezone=auto` gives the city's own day and `utc_offset_seconds`, so the tile can show its local time. Places come from a built-in list (no geocoding requests).
 - **Weather codes:** WMO codes (0 clear, 1 to 3 cloud cover, 45/48 fog, 51 to 57 drizzle, 61 to 67 rain, 71 to 77 snow, 80 to 82 showers, 85/86 snow showers, 95 to 99 thunderstorm). The app maps them to Bosnian text and an icon.
 - **Terms:** free for non-commercial use, under 10,000 calls/day. Data under CC BY 4.0: show "Weather data by Open-Meteo.com" with a link (in O aplikaciji; the tile shows "Open-Meteo"). Our use is about 50 to 100 calls/day.
-- **Failure:** keep the last forecast; if it is older than 3 hours, grey it out.
+- **Failure:** keep the last forecast; if it is older than 3 hours, grey it out. Without any forecast the theme and dimming use a sunrise/sunset calculation (within 1 to 2 minutes of Open-Meteo for Sarajevo).
+- **Home location:** one of the ten BiH cities that name a MeteoAlarm region (Sarajevo by default), so the warning region always matches. Fuel, air stations, water and smog stay Sarajevo-only sources.
 
 ## Air quality
 

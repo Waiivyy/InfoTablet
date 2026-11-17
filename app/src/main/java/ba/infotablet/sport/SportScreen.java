@@ -33,7 +33,7 @@ public final class SportScreen extends FrameLayout implements Refreshable {
     public SportScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        int pad = Ui.dp(c, 12), gap = Ui.dp(c, 10);
+        int pad = Ui.pagePad(c), gap = Ui.gap(c);
         LinearLayout root = new LinearLayout(c);
         root.setPadding(pad, pad, pad, pad);
         LinearLayout left = new LinearLayout(c);

@@ -23,7 +23,16 @@ public final class HoldRepeat implements View.OnTouchListener {
 
     public static void attach(View v, Runnable action) {
         v.setOnClickListener(x -> action.run());
-        v.setOnTouchListener(new HoldRepeat(action));
+        final HoldRepeat h = new HoldRepeat(action);
+        v.setOnTouchListener(h);
+        // A view removed while held never sees ACTION_UP; stop repeating then as well.
+        v.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override public void onViewAttachedToWindow(View view) {}
+
+            @Override public void onViewDetachedFromWindow(View view) {
+                h.handler.removeCallbacks(h.tick);
+            }
+        });
     }
 
     private final Runnable tick = new Runnable() {

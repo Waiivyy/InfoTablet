@@ -39,7 +39,7 @@ public final class RemindersScreen extends FrameLayout implements Refreshable, B
     public RemindersScreen(Context c, Palette p) {
         super(c);
         this.p = p;
-        int pad = Ui.dp(c, 12);
+        int pad = Ui.pagePad(c);
         LinearLayout root = new LinearLayout(c);
         root.setPadding(pad, pad, pad, pad);
 
@@ -76,7 +76,7 @@ public final class RemindersScreen extends FrameLayout implements Refreshable, B
 
         side = new FrameLayout(c);
         LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(Ui.dp(c, 452), LinearLayout.LayoutParams.MATCH_PARENT);
-        sl.leftMargin = Ui.dp(c, 10);
+        sl.leftMargin = Ui.gap(c);
         root.addView(side, sl);
         addView(root, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         showHelp();
