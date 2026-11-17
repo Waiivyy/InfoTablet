@@ -22,6 +22,7 @@ import java.util.Locale;
 import ba.infotablet.fuel.FuelScreen;
 import ba.infotablet.home.HomeScreen;
 import ba.infotablet.home.PlaceholderPanel;
+import ba.infotablet.news.NewsScreen;
 import ba.infotablet.sync.Scheduler;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
@@ -129,6 +130,10 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 FuelScreen f = new FuelScreen(this, palette);
                 screen = f;
                 view = f;
+            } else if (index == 4) {
+                NewsScreen n = new NewsScreen(this, palette);
+                screen = n;
+                view = n;
             } else {
                 screen = null;
                 FrameLayout wrap = new FrameLayout(this);

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test feed in the shape of an Atom feed with RFC 822 dates. -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>Primjer</title><updated>2026-11-17 00:19:51</updated>
+<entry><author><name>RSA</name></author><title type="text"><![CDATA[&quot;Nova&quot; linija tramvaja od ponedjeljka]]></title>
+<category term="Vijesti" label="Vijesti"/><link rel="alternate" href="https://radiosarajevo.ba/vijesti/lokalne-teme/nova-linija/200001"/><id>https://radiosarajevo.ba/vijesti/lokalne-teme/nova-linija/200001</id>
+<summary type="html"><![CDATA[<img src="https://storage.example/a.jpg">]]></summary><content type="html"></content><updated>Mon, 16 Nov 2026 23:25:00 +0100</updated></entry>
+</feed>

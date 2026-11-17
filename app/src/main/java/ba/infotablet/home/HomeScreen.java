@@ -6,6 +6,7 @@ import android.widget.FrameLayout;
 import ba.infotablet.Settings;
 import ba.infotablet.data.Cache;
 import ba.infotablet.fuel.FuelPanel;
+import ba.infotablet.news.NewsPanel;
 import ba.infotablet.sources.FuelSource;
 import ba.infotablet.sources.WarningsSource;
 import ba.infotablet.sources.WeatherSource;
@@ -21,6 +22,7 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
     private final WeatherPanel weather;
     private final WarningBanner banner;
     private final FuelPanel fuel;
+    private final NewsPanel news;
     private final long fuelStaleMs = new FuelSource().staleAfterMs();
     private final long weatherStaleMs = new WeatherSource().staleAfterMs();
 
@@ -40,7 +42,8 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         grid.add(new PlaceholderPanel(c, p, "Podsjetnici", "Uskoro"), 0, 2, 1, 1);
         fuel = new FuelPanel(c, p);
         grid.add(fuel, 1, 2, 1, 1);
-        grid.add(new PlaceholderPanel(c, p, "Vijesti", "Uskoro"), 2, 2, 1, 1);
+        news = new NewsPanel(c, p);
+        grid.add(news, 2, 2, 1, 1);
 
         addView(grid, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
     }
@@ -52,5 +55,6 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         weather.bind(Cache.get(c, WeatherSource.ID), weatherStaleMs, Settings.of(c).locationName(), now);
         banner.bind(Cache.get(c, WarningsSource.ID), now);
         fuel.bind(Cache.get(c, FuelSource.ID), fuelStaleMs, now);
+        news.bind(now);
     }
 }

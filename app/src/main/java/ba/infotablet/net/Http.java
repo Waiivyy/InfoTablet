@@ -40,6 +40,47 @@ public final class Http {
         }
     }
 
+    /**
+     * GET a page but stop reading once {@code marker} has been seen plus {@code extraBytes}, or at
+     * {@code cap}. News articles are 160 to 460 KB, while the text the app needs sits near the
+     * start of the body; this keeps memory low on the 1 GB tablet. Pages are decoded as UTF-8.
+     */
+    public static String getPartial(String url, String marker, int extraBytes, int cap) throws IOException {
+        Response r = Net.client().newCall(new Request.Builder().url(url).build()).execute();
+        try {
+            if (!r.isSuccessful()) throw new IOException("HTTP " + r.code() + " " + host(url));
+            ResponseBody body = r.body();
+            if (body == null) throw new IOException("Empty body " + host(url));
+            byte[] needle = marker.getBytes(UTF8);
+            java.io.InputStream in = body.byteStream();
+            byte[] buf = new byte[Math.min(cap, 512 * 1024)];
+            int len = 0, stopAt = cap, searchFrom = 0;
+            while (len < stopAt) {
+                int n = in.read(buf, len, Math.min(8192, stopAt - len));
+                if (n < 0) break;
+                len += n;
+                if (stopAt == cap) {
+                    int at = indexOf(buf, len, needle, Math.max(0, searchFrom - needle.length));
+                    searchFrom = len;
+                    if (at >= 0) stopAt = Math.min(cap, at + needle.length + extraBytes);
+                }
+                if (len == buf.length && len < stopAt) buf = java.util.Arrays.copyOf(buf, Math.min(cap, buf.length * 2));
+            }
+            return new String(buf, 0, len, UTF8);
+        } finally {
+            r.close();
+        }
+    }
+
+    private static int indexOf(byte[] hay, int len, byte[] needle, int from) {
+        outer:
+        for (int i = from; i <= len - needle.length; i++) {
+            for (int k = 0; k < needle.length; k++) if (hay[i + k] != needle[k]) continue outer;
+            return i;
+        }
+        return -1;
+    }
+
     private static Charset charset(ResponseBody body) {
         MediaType type = body.contentType();
         Charset c = type == null ? null : type.charset(null);

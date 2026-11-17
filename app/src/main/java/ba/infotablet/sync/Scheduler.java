@@ -11,6 +11,7 @@ import android.util.Log;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import ba.infotablet.Settings;
 import ba.infotablet.data.Cache;
 import ba.infotablet.data.SourceState;
 
@@ -88,14 +89,17 @@ public final class Scheduler {
     }
 
     public Summary summary() {
-        int ok = 0;
+        int ok = 0, total = 0;
         long last = 0;
+        Settings settings = Settings.of(ctx);
         for (BaseSource s : sources) {
+            if (!settings.sourceEnabled(s.id())) continue;
+            total++;
             SourceState st = Cache.get(ctx, s.id());
             if (st.hasData() && !st.failing()) ok++;
             last = Math.max(last, st.okAt);
         }
-        return new Summary(ok, sources.size(), last);
+        return new Summary(ok, total, last);
     }
 
     private final Runnable tick = new Runnable() {
@@ -110,7 +114,9 @@ public final class Scheduler {
 
     private void runDue() {
         if (!online()) return;
+        Settings settings = Settings.of(ctx);
         for (BaseSource s : sources) {
+            if (!settings.sourceEnabled(s.id())) continue;
             long now = System.currentTimeMillis();
             if (now >= s.dueAt(Cache.get(ctx, s.id()), now)) run(s);
         }

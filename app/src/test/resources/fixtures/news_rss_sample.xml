@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test feed in the shape of a portal RSS 2.0 feed. -->
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/">
+<channel><title>Primjer</title>
+<item><title>Novi raspored odvoza otpada</title><link>https://www.klix.ba/vijesti/bih/novi-raspored/100001</link><guid>https://www.klix.ba/vijesti/bih/novi-raspored/100001</guid>
+<description><![CDATA[Općina je objavila &quot;novi&quot; raspored odvoza otpada za naredni mjesec.]]></description>
+<category domain="https://www.klix.ba/vijesti">BiH</category><pubDate>Mon, 16 Nov 2026 23:59:00 +0100</pubDate><dc:creator></dc:creator><media:content url="https://static.example/a.jpg" width="850"/></item>
+<item><title>Uhapšen osumnjičeni za krađu</title><link>https://www.klix.ba/vijesti/crna-hronika/uhapsen/100002</link><description><![CDATA[Policija je uhapsila osobu.]]></description><category domain="https://www.klix.ba/vijesti">Crna hronika</category><pubDate>Mon, 16 Nov 2026 22:10:00 +0100</pubDate></item>
+<item><title>Nesreća na magistralnom putu</title><link>https://n1info.ba/vijesti/nesreca-na-putu/</link><description>Saobraćajna nesreća dogodila se jutros, a procjene stručnjaka o uzrocima još nisu pozna</description><category><![CDATA[Vijesti]]></category><category><![CDATA[Crna Hronika]]></category><pubDate>Mon, 16 Nov 2026 21:30:41 +0100</pubDate></item>
+<item><title>Video: pogled na grad</title><link>https://n1info.ba/video/dnevnik/pogled/</link><description>Kratki video.</description><pubDate>Mon, 16 Nov 2026 21:00:00 +0100</pubDate></item>
+</channel></rss>

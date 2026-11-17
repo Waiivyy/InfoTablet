@@ -38,4 +38,18 @@ public final class Settings {
     public String warningRegion() {
         return prefs.getString("warning_region", "BA006");
     }
+
+    /** Per-source on/off switch (all sources on by default). */
+    public boolean sourceEnabled(String sourceId) {
+        return prefs.getBoolean("source_on_" + sourceId, true);
+    }
+
+    public void setSourceEnabled(String sourceId, boolean on) {
+        prefs.edit().putBoolean("source_on_" + sourceId, on).apply();
+    }
+
+    /** Hide "crna hronika" (crime) news; on by default. */
+    public boolean hideCrime() {
+        return prefs.getBoolean("news_hide_crime", true);
+    }
 }
