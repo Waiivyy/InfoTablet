@@ -21,8 +21,9 @@ import ba.infotablet.ui.SpanGrid;
 import ba.infotablet.ui.Ui;
 
 /**
- * Početna: clock and date, weather, the warning banner when one is active, and three tiles chosen
- * in Postavke (default: reminders, fuel, top headline). A tile opens its screen when tapped.
+ * Početna: clock and date, weather, the warning banner when one is active (or a waiting update),
+ * and three tiles chosen in Postavke (default: reminders, fuel, top headline). A tile opens its
+ * screen when tapped.
  */
 public final class HomeScreen extends FrameLayout implements Refreshable {
 
@@ -31,6 +32,7 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
     private final ClockPanel clock;
     private final WeatherPanel weather;
     private final WarningBanner banner;
+    private final UpdateBanner update;
     private final View[] tiles = new View[3];
     private final long fuelStaleMs = new FuelSource().staleAfterMs();
     private final long weatherStaleMs = new WeatherSource().staleAfterMs();
@@ -45,9 +47,11 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         clock = new ClockPanel(c, p);
         weather = new WeatherPanel(c, p);
         banner = new WarningBanner(c, p);
+        update = new UpdateBanner(c, p);
         grid.add(clock, 0, 0, 2, 1);
         grid.add(weather, 2, 0, 1, 1);
         grid.add(banner, 0, 1, 3, 1);
+        grid.add(update, 0, 1, 3, 1);
 
         Settings s = Settings.of(c);
         String[] chosen = s.tiles();
@@ -83,7 +87,8 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         Context c = getContext();
         clock.update();
         weather.bind(Cache.get(c, WeatherSource.ID), weatherStaleMs, Settings.of(c).locationName(), now);
-        banner.bind(Cache.get(c, WarningsSource.ID), Cache.get(c, SmogSource.ID), now);
+        boolean warning = banner.bind(Cache.get(c, WarningsSource.ID), Cache.get(c, SmogSource.ID), now);
+        update.bind(!warning);
         for (View v : tiles) {
             if (v instanceof RemindersPanel) {
                 ((RemindersPanel) v).bind(Agenda.upcoming(ReminderStore.all(c), now, REMINDER_HORIZON_MS), now);

@@ -18,7 +18,10 @@ import ba.infotablet.ui.NarrowSpan;
 import ba.infotablet.ui.Palette;
 import ba.infotablet.ui.QrView;
 import ba.infotablet.ui.Ui;
+import ba.infotablet.update.UpdateState;
+import ba.infotablet.update.Updater;
 import ba.infotablet.util.Clock;
+import ba.infotablet.util.Fmt;
 import ba.infotablet.web.WebServer;
 
 /** Postavke: the Wi-Fi page, PIN and backups, updates, and O aplikaciji. */
@@ -169,8 +172,44 @@ final class SystemSections {
     static void updates(final SettingsScreen s, LinearLayout out) {
         Context c = s.getContext();
         Palette p = s.p;
-        Sections.add(out, p, Controls.row(c, p, "Trenutna verzija", BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")", null));
-        out.addView(Controls.note(c, p, "Provjera novih verzija preko GitHuba dolazi sa sljedećim ažuriranjem.", p.fg2));
+        UpdateState st = UpdateState.of(c);
+        Sections.add(out, p, Controls.row(c, p, "Instalirana verzija", BuildConfig.VERSION_NAME, null));
+
+        String ready = st.readyVersion();
+        if (ready != null && st.readyFile(c) != null) {
+            Sections.add(out, p, Controls.row(c, p, "Nova verzija " + ready,
+                    "Preuzeta i provjerena. Instalacija traje oko pola minute; postavke i podsjetnici ostaju.",
+                    Controls.button(c, p, "Instaliraj", true, v -> Updater.install(v.getContext()))));
+            if (!st.readyNotes().isEmpty()) out.addView(Controls.note(c, p, st.readyNotes(), p.fg2));
+        }
+
+        String progress = Updater.progress();
+        TextView check = Controls.button(c, p, progress != null ? "Provjeravam…" : "Provjeri ažuriranje", false, v -> {
+            Updater.checkNow(v.getContext());
+            s.changed();
+        });
+        check.setEnabled(progress == null);
+        if (progress != null) check.setAlpha(0.5f);
+        String desc;
+        if (progress != null) {
+            desc = progress;
+        } else if (st.resultAt() > 0) {
+            desc = Fmt.fullDate(st.resultAt()) + " u " + Fmt.hhmm(st.resultAt()) + ": " + st.result();
+        } else {
+            desc = "Još nije provjereno.";
+        }
+        Sections.add(out, p, Controls.row(c, p, "Provjera", desc, check));
+        if (!Updater.installAllowed(c)) {
+            out.addView(Controls.note(c, p, "Da bi se nova verzija mogla instalirati, u postavkama tableta (Sigurnost) treba uključiti "
+                    + "„Nepoznati izvori“.", p.warn));
+        }
+        out.addView(Controls.note(c, p, "Tablet sam provjerava jednom mjesečno, i odmah kad neki izvor podataka ne radi dva dana. "
+                + "Nove verzije dolaze s GitHuba (github.com/" + Updater.repo() + ") i instaliraju se tek kad dodirnete Instaliraj.", p.fg2));
+    }
+
+    static String updatesKey(Context c) {
+        UpdateState st = UpdateState.of(c);
+        return Updater.progress() + "|" + st.resultAt() + "|" + st.readyVersion();
     }
 
     // ---- O aplikaciji ----

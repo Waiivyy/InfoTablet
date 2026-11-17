@@ -244,8 +244,12 @@ Winter equipment is mandatory in BiH from 1 November to 1 April. The app shows a
 
 ## Updates: GitHub Releases
 
-- **URL:** `https://api.github.com/repos/<owner>/<repo>/releases/latest` (unauthenticated limit 60 requests/hour; the app uses a handful per month). The APK is a release asset; downloads redirect to `release-assets.githubusercontent.com`.
-- **When:** once a month, on "Provjeri ažuriranje", and when any source has failed for 2 days in a row.
+- **URL:** `https://api.github.com/repos/Waiivyy/InfoTablet/releases/latest` with `Accept: application/vnd.github+json` (unauthenticated limit 60 requests/hour; the app uses a handful per month). 404 means no release yet. Drafts and pre-releases are ignored by that endpoint.
+- **When:** once a month; at once when an enabled source has been failing for 2 days, then at most daily while it keeps failing; and on "Provjeri ažuriranje". A check that does not finish is retried after an hour.
+- **Release format:** tag `vX.Y.Z`, one `.apk` asset from this repository, under 25 MB. The version code is X·10000 + Y·100 + Z.
+- **Download:** the asset's `browser_download_url`, which redirects to `release-assets.githubusercontent.com`. Redirects are followed by hand and only HTTPS to `github.com` or `*.githubusercontent.com` is allowed. The file must match the asset's size and its `digest` (SHA-256) from the API.
+- **Before it is offered:** same package name, higher version code, and the same signing certificate as the installed app (Android checks the signature again when installing). A refused version is not downloaded again by the automatic checks.
+- **Install:** "Nova verzija" with an Instaliraj button in Postavke, Ažuriranja and in the banner row of Početna (a weather or smog warning takes the row first). The system installer asks for confirmation; after the update the app opens itself again. Needs "Nepoznati izvori" (Unknown sources) to be on.
 
 ---
 

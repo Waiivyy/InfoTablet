@@ -2,6 +2,26 @@ plugins {
     id 'com.android.application'
 }
 
+// One version string; the version code follows from it (1.2.3 -> 10203). A test build can use
+// another one: ./gradlew assembleRelease -PappVersion=0.9.0
+def appVersion = (project.findProperty('appVersion') ?: '1.0.0').toString()
+def versionParts = appVersion.tokenize('.').collect { it as int }
+while (versionParts.size() < 3) versionParts << 0
+def appVersionCode = versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]
+
+// The release key lives outside the repository. local.properties (never committed) points to a
+// properties file with storeFile, storePassword, keyAlias and keyPassword:
+//   infotablet.signing=/path/to/signing.properties
+def localProps = new Properties()
+def localFile = rootProject.file('local.properties')
+if (localFile.exists()) localFile.withInputStream { localProps.load(it) }
+def signingProps = null
+def signingPath = localProps.getProperty('infotablet.signing')
+if (signingPath && new File(signingPath).exists()) {
+    signingProps = new Properties()
+    new File(signingPath).withInputStream { signingProps.load(it) }
+}
+
 android {
     namespace = 'ba.infotablet'
     compileSdk = 36
@@ -12,15 +32,33 @@ android {
         // Lenovo IdeaTab A3000-H runs Android 4.2.2 (API 17).
         minSdk = 17
         targetSdk = 36
-        versionCode = 1
-        versionName = '0.1.0'
+        versionCode = appVersionCode
+        versionName = appVersion
+        // Public repository whose GitHub Releases carry the signed APK (checked for updates).
+        buildConfigField 'String', 'UPDATE_REPO', '"Waiivyy/InfoTablet"'
         // The tablet is ARMv7 and mdpi; ship only what it can use.
         ndk { abiFilters 'armeabi-v7a' }
         vectorDrawables.generatedDensities = ['mdpi', 'hdpi']
     }
 
+    signingConfigs {
+        if (signingProps != null) {
+            release {
+                storeFile = new File(signingProps.getProperty('storeFile'))
+                storePassword = signingProps.getProperty('storePassword')
+                keyAlias = signingProps.getProperty('keyAlias')
+                keyPassword = signingProps.getProperty('keyPassword')
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Without the key (another computer) the release build comes out unsigned.
+            // -PreleaseWithDebugKey signs it with the debug key instead, to try the minified
+            // build on a tablet that has a debug build installed.
+            if (project.hasProperty('releaseWithDebugKey')) signingConfig = signingConfigs.debug
+            else if (signingProps != null) signingConfig = signingConfigs.release
             minifyEnabled = true
             shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

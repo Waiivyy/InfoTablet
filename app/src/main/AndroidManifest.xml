@@ -12,6 +12,8 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
+    <!-- Updates from GitHub Releases: Android 8 and newer ask for this before opening the installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".App"
@@ -64,6 +66,13 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <!-- Hands a downloaded update to the system installer on Android 7 and newer (not exported). -->
+        <provider
+            android:name=".update.ApkProvider"
+            android:authorities="${applicationId}.apk"
+            android:exported="false"
+            android:grantUriPermissions="true" />
 
         <!-- Device-only settings from adb; only senders holding DUMP (the adb shell) may use it. -->
         <receiver

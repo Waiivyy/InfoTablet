@@ -29,15 +29,23 @@ public final class Http {
             if (!r.isSuccessful()) throw new IOException("HTTP " + r.code() + " " + host(url));
             ResponseBody body = r.body();
             if (body == null) throw new IOException("Empty body " + host(url));
-            BufferedSource src = body.source();
-            Buffer buf = new Buffer();
-            while (buf.size() <= cap) {
-                if (src.read(buf, 8192) == -1) return buf.readString(charset(body));
-            }
-            throw new IOException("Response too large " + host(url));
+            return read(body, cap);
+        } catch (IOException e) {
+            if ("Response too large".equals(e.getMessage())) throw new IOException("Response too large " + host(url));
+            throw e;
         } finally {
             r.close();
         }
+    }
+
+    /** The body as text, or an IOException("Response too large") past {@code cap} bytes. */
+    public static String read(ResponseBody body, long cap) throws IOException {
+        BufferedSource src = body.source();
+        Buffer buf = new Buffer();
+        while (buf.size() <= cap) {
+            if (src.read(buf, 8192) == -1) return buf.readString(charset(body));
+        }
+        throw new IOException("Response too large");
     }
 
     /**

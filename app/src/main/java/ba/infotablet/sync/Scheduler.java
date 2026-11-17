@@ -14,6 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import ba.infotablet.Settings;
 import ba.infotablet.data.Cache;
 import ba.infotablet.data.SourceState;
+import ba.infotablet.update.Updater;
 
 /**
  * Runs due sources one at a time on a background thread, every 30 seconds, and tells the UI
@@ -120,6 +121,11 @@ public final class Scheduler {
             if (!settings.sourceEnabled(s.id()) || !s.active(ctx)) continue;
             long now = System.currentTimeMillis();
             if (now >= s.dueAt(Cache.get(ctx, s.id()), now)) run(s);
+        }
+        try {
+            Updater.maybeCheck(ctx, sources, System.currentTimeMillis());
+        } catch (RuntimeException e) {
+            Log.w(TAG, "update trigger: " + e);
         }
     }
 

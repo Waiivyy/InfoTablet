@@ -69,6 +69,7 @@ final class Sections {
     static String liveKey(SettingsScreen s, int index) {
         if (index == 5) return ContentSections.sourcesKey(s.getContext());
         if (index == 6) return SystemSections.wifiKey(s.getContext());
+        if (index == 8) return SystemSections.updatesKey(s.getContext());
         return "";
     }
 
