@@ -1,0 +1,18 @@
+# Build output
+.gradle/
+build/
+/local.properties
+/captures/
+*.apk
+*.aab
+
+# IDE and OS
+.idea/
+*.iml
+.DS_Store
+
+# Signing material and device-only values never belong in the repository
+*.jks
+*.keystore
+signing.properties
+keystore.properties

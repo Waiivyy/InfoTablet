@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug builds only: start with
+             adb shell am start -n ba.infotablet/.debug.SelfTestActivity -->
+        <activity
+            android:name=".debug.SelfTestActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen" />
+    </application>
+</manifest>

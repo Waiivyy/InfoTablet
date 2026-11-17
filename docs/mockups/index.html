@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1100">
+<title>InfoTablet mockupi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* Page around the frames (not part of the app) */
+  html, body { margin: 0; background: #2A2E33; color: #D9DEE3; font-family: Roboto, system-ui, sans-serif; }
+  .page { width: 1024px; margin: 0 auto; padding: 28px 0 60px; }
+  .page h1 { font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+  .page p.note { font-size: 14px; color: #A7B0B9; margin: 0 0 24px; line-height: 1.5; }
+  .cap { font-size: 14px; color: #A7B0B9; margin: 26px 0 8px; }
+  .solo .page { padding: 0; width: auto; }
+  .solo .cap, .solo h1, .solo p.note { display: none; }
+
+  /* ---------- Device frame: 1024x600, app area 1024x552, system nav bar 48 ---------- */
+  .frame { width: 1024px; height: 600px; position: relative; overflow: hidden; background: #000; }
+  .sysnav { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: #000; }
+  .sysnav i { position: absolute; top: 21px; width: 6px; height: 6px; border-radius: 3px; background: #3A3A3A; }
+
+  /* ---------- Themes ---------- */
+  .light {
+    --bg: #E6E9ED; --panel: #FAFBFC; --rail: #DBE0E5; --line: #CFD6DD; --soft: #E3E7EB;
+    --fg: #0F1419; --fg2: #4D5864; --fg3: #66717C;
+    --accent: #1F46B0; --accent-fg: #FFFFFF; --accent-tint: rgba(31, 70, 176, .10);
+    --ok: #1D8A4C; --warn: #965D00; --alert: #C2352A;
+    --warn-tint: #FBF2DE; --warn-line: #E9CC8F;
+  }
+  .dark {
+    --bg: #080B0E; --panel: #10151A; --rail: #0C1014; --line: #212931; --soft: #1A2128;
+    --fg: #CED6DE; --fg2: #8A96A2; --fg3: #77828E;
+    --accent: #7C9FFF; --accent-fg: #0A0F1A; --accent-tint: rgba(124, 159, 255, .13);
+    --ok: #3FB46F; --warn: #E09D36; --alert: #EC695D;
+    --warn-tint: #1C170D; --warn-line: #4F3D15;
+  }
+
+  /* ---------- App shell ---------- */
+  .app { position: absolute; left: 0; top: 0; width: 1024px; height: 552px;
+         display: grid; grid-template-columns: 92px 1fr; grid-template-rows: 1fr 24px;
+         background: var(--bg); color: var(--fg); font-family: Roboto, sans-serif; }
+  .mono { font-family: 'Roboto Mono', monospace; font-variant-numeric: tabular-nums; }
+  .np { margin: 0 -.13em; }
+  .deg { margin: 0 -.06em 0 -.1em; }
+  .label { font-size: 11.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--fg2); }
+  .ic { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .rail { grid-row: 1 / 3; background: var(--rail); border-right: 1px solid var(--line);
+          display: flex; flex-direction: column; padding: 6px; gap: 2px; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+         border-radius: 10px; color: var(--fg2); font-size: 12px; font-weight: 500; }
+  .tab.on { background: var(--accent-tint); color: var(--accent); }
+
+  .main { padding: 12px; display: grid; gap: 10px; min-height: 0; }
+  .status { display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 13px;
+            border-top: 1px solid var(--line); font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 500;
+            letter-spacing: .05em; text-transform: uppercase; color: var(--fg2); }
+  .status span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 7px; height: 7px; border-radius: 4px; display: inline-block; background: var(--ok); }
+  .dot.warn { background: var(--warn); }
+  .dot.alert { background: var(--alert); }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 13px 16px;
+           min-height: 0; overflow: hidden; position: relative; }
+  .phead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .row { display: flex; align-items: center; border-top: 1px solid var(--soft); }
+  .row:first-of-type { border-top: 0; }
+
+  /* ---------- Pocetna ---------- */
+  .home { grid-template-columns: repeat(3, 1fr); grid-template-rows: 240px 46px 1fr; }
+  .clock { grid-column: 1 / 3; display: flex; flex-direction: column; padding: 10px 22px 12px; }
+  .time { font-size: 150px; font-weight: 300; line-height: .9; letter-spacing: -.03em; margin-left: -6px; }
+  .date { font-size: 28px; margin-top: 8px; }
+  .next { margin-top: auto; display: flex; align-items: center; gap: 8px; font-size: 15.5px; color: var(--fg2);
+          border-top: 1px solid var(--soft); padding-top: 10px; }
+  .next .ic { width: 20px; height: 20px; color: var(--accent); }
+  .next b { color: var(--fg); font-weight: 500; }
+
+  .wx { display: flex; flex-direction: column; padding-bottom: 0; }
+  .wx-main { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+  .wx-main .ic { width: 58px; height: 58px; stroke-width: 1.4; color: var(--fg); }
+  .temp { font-size: 84px; font-weight: 300; line-height: .95; letter-spacing: -.04em; }
+  .wx-desc { font-size: 17px; margin-top: 4px; }
+  .wx-sub { font-size: 14px; color: var(--fg2); margin-top: 2px; }
+  .cells { display: grid; grid-template-columns: repeat(3, 1fr); margin: auto -16px 0; border-top: 1px solid var(--soft); }
+  .cells > div { padding: 7px 0 9px 16px; border-left: 1px solid var(--soft); }
+  .cells > div:first-child { border-left: 0; }
+  .cells .v { font-size: 18px; margin-top: 2px; }
+  .cells .v small { font-size: 12px; color: var(--fg2); }
+
+  .banner { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 0 14px;
+            background: var(--warn-tint); border: 1px solid var(--warn-line); border-radius: 8px; font-size: 15px; }
+  .lvl { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; padding: 4px 8px; border-radius: 4px; color: #2B2200; background: #F3CF3A; }
+  .banner .ic { color: var(--warn); }
+  .banner b { font-weight: 500; font-size: 16.5px; }
+  .banner .src { margin-left: auto; color: var(--fg2); font-size: 13px; }
+
+  .rem .row { height: 45px; gap: 10px; }
+  .rem .t { font-size: 19px; font-weight: 500; width: 58px; flex: none; }
+  .rem .t.s { font-size: 13px; font-weight: 500; color: var(--fg2); text-transform: uppercase; letter-spacing: .04em; }
+  .rem .txt { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .rem .ic { width: 20px; height: 20px; color: var(--fg2); }
+
+  .fuel .row { height: 70px; justify-content: space-between; gap: 8px; }
+  .fuel .st { font-size: 14.5px; margin-top: 3px; white-space: nowrap; }
+  .fuel .st2 { font-size: 13px; color: var(--fg2); margin-top: 1px; white-space: nowrap; }
+  .price { font-size: 34px; font-weight: 400; letter-spacing: -.02em; }
+
+  .news-tile h2 { font-size: 18px; font-weight: 500; line-height: 1.3; margin: 2px 0 6px;
+                  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .news-tile p { font-size: 14px; line-height: 1.4; color: var(--fg2); margin: 0;
+                 display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ---------- Gorivo ---------- */
+  .fuelpage { grid-template-columns: 1fr 282px; grid-template-rows: 54px 1fr; }
+  .seg { display: flex; gap: 4px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  .seg div { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 500;
+             color: var(--fg2); border-radius: 7px; }
+  .seg div.on { background: var(--accent); color: var(--accent-fg); }
+  .fmeta { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; font-size: 14px; color: var(--fg2); line-height: 1.45; }
+  .fmeta b { color: var(--fg); font-weight: 500; }
+  .list { padding: 0; display: flex; flex-direction: column; }
+  .thead { display: grid; grid-template-columns: 46px 1fr 150px; padding: 10px 18px 8px 0; border-bottom: 1px solid var(--line); }
+  .thead .label:first-child { text-align: center; }
+  .frow { display: grid; grid-template-columns: 46px 1fr 150px; align-items: center; flex: 1; border-top: 1px solid var(--soft); padding-right: 18px; }
+  .frow:nth-child(2) { border-top: 0; }
+  .rank { text-align: center; font-size: 17px; color: var(--fg3); }
+  .sname { font-size: 19px; font-weight: 500; }
+  .addr { display: flex; align-items: center; gap: 5px; font-size: 14.5px; color: var(--fg2); margin-top: 3px; }
+  .addr .ic { width: 15px; height: 15px; }
+  .pcol { text-align: right; }
+  .pcol .price { font-size: 36px; font-weight: 500; }
+  .pcol .unit { font-size: 12px; color: var(--fg2); margin-left: 4px; letter-spacing: .04em; }
+  .pcol .pd { font-size: 12.5px; color: var(--fg2); margin-top: 1px; }
+  .best { color: var(--accent); }
+  .side { display: flex; flex-direction: column; gap: 0; padding: 0; }
+  .sblock { padding: 13px 16px; border-top: 1px solid var(--soft); }
+  .sblock:first-child { border-top: 0; }
+  .kv { display: flex; justify-content: space-between; align-items: baseline; margin-top: 7px; font-size: 15px; }
+  .kv .mono { font-size: 19px; }
+  .kv .k { color: var(--fg2); }
+  .range { position: relative; height: 26px; margin: 10px 2px 2px; }
+  .range .track { position: absolute; left: 0; right: 0; top: 12px; height: 2px; background: var(--soft); }
+  .range .seg5 { position: absolute; top: 9px; height: 8px; border-radius: 4px; background: var(--accent-tint); border: 1px solid var(--accent); }
+  .range .avg { position: absolute; top: 4px; width: 2px; height: 18px; background: var(--fg2); }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .07em; padding: 2px 6px; border-radius: 4px;
+         color: var(--warn); border: 1px solid var(--warn); vertical-align: 2px; margin-left: 6px; }
+  .srcnote { margin-top: auto; padding: 11px 16px 12px; border-top: 1px solid var(--soft); font-size: 12.5px; color: var(--fg2); line-height: 1.45; }
+
+  /* ---------- Vijesti ---------- */
+  .newspage { grid-template-columns: 1fr 1fr; grid-template-rows: 40px 1fr 1fr; }
+  .chips { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+  .chip { height: 36px; padding: 0 14px; display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px;
+          font-size: 15px; font-weight: 500; color: var(--fg2); background: var(--panel); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  .srcs { margin-left: auto; display: flex; gap: 14px; font-size: 13px; color: var(--fg2); }
+  .srcs span { display: inline-flex; align-items: center; gap: 6px; }
+  .art { display: flex; flex-direction: column; padding: 14px 18px 12px; }
+  .art .meta { display: flex; justify-content: space-between; }
+  .art h2 { font-size: 20px; font-weight: 500; line-height: 1.28; margin: 6px 0 7px; }
+  .art p { font-size: 15px; line-height: 1.47; margin: 0; color: var(--fg); opacity: .86;
+           display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .art.stale h2, .art.stale p, .art.stale .meta .label:first-child { opacity: .62; }
+  .stale-tag { font-size: 11px; font-weight: 700; letter-spacing: .07em; color: var(--warn); }
+  .scroll { position: absolute; right: 3px; top: 62px; width: 3px; height: 120px; border-radius: 2px; background: var(--line); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5A1.5 1.5 0 0 1 3.5 19z"/></symbol>
+    <symbol id="i-cloudsun" viewBox="0 0 24 24"><circle cx="8.5" cy="8.3" r="3"/><path d="M8.5 2.6v1.1M2.8 8.3h1.1M4.5 4.3l.8.8M12.5 4.3l-.8.8"/><path d="M9.2 20h8.3a3.5 3.5 0 0 0 .4-6.98 5 5 0 0 0-9.4.5A3.25 3.25 0 0 0 9.2 20z"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7.2 18.5h10.3a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.7 11.6a3.45 3.45 0 0 0 .5 6.9z"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7.2 14.5h10.3a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.7 7.6a3.45 3.45 0 0 0 .5 6.9z"/><path d="M8.6 17.6l-1 2.6M12.6 17.6l-1 2.6M16.6 17.6l-1 2.6"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h10.5a2.5 2.5 0 1 0-2.5-2.5M3 15h14.5a2.5 2.5 0 1 1-2.5 2.5M3 12h6.5"/></symbol>
+    <symbol id="i-fuel" viewBox="0 0 24 24"><path d="M5 20.5v-15A1.5 1.5 0 0 1 6.5 4h6A1.5 1.5 0 0 1 14 5.5v15M3.5 20.5h12M5 10h9M14 9h2.5l2 2v6.5a1.5 1.5 0 0 1-3 0V14H14"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-news" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h10A1.5 1.5 0 0 1 17 5.5V18a2.5 2.5 0 0 0 2.5 2.5h-13A2.5 2.5 0 0 1 4 18z"/><path d="M17 8.5h2.5V18M7.5 8h6M7.5 11.5h6M7.5 15h4"/></symbol>
+    <symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8.3l3.5 2.5-1.3 4.1H9.8l-1.3-4.1zM12 8.3V3.6M15.5 10.8l4.3-1.3M14.2 14.9l2.6 3.7M9.8 14.9l-2.6 3.7M8.5 10.8 4.2 9.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.5 16.5v-5a5.5 5.5 0 0 1 11 0v5l1.5 2h-14z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M9 8V6.2A1.2 1.2 0 0 1 10.2 5h3.6A1.2 1.2 0 0 1 15 6.2V8M3.5 13h17M10 13v2h4v-2"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M15 5v4M4 12h3M11 12h9M9 10v4M4 17h11M19 17h1M17 15v4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 20.5s6.5-5.8 6.5-10.8a6.5 6.5 0 0 0-13 0c0 5 6.5 10.8 6.5 10.8z"/><circle cx="12" cy="9.7" r="2.3"/></symbol>
+    <symbol id="i-pill" viewBox="0 0 24 24"><rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-40 12 12)"/><path d="M9.7 9.3l5 4.3" transform="rotate(0)"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3zM9 8h6M9 11.5h6M9 15h3.5"/></symbol>
+    <symbol id="i-med" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16.5v-4l2-5h12l2 5v4zM4 16.5V19h3v-2.5M17 16.5V19h3v-2.5M4 12.5h16"/></symbol>
+    <symbol id="i-cake" viewBox="0 0 24 24"><path d="M4.5 20.5h15v-7a1.5 1.5 0 0 0-1.5-1.5H6a1.5 1.5 0 0 0-1.5 1.5zM4.5 16.2c2.5 1.4 4.5 1.4 7.5 0s5 -1.4 7.5 0M12 12V8.6M12 5.4v.4"/></symbol>
+  </defs>
+</svg>
+
+<div class="page">
+  <h1>InfoTablet: mockupi za odobrenje</h1>
+  <p class="note">Četiri ekrana u stvarnoj rezoluciji tableta (1024x600; donjih 48 px je sistemska navigacija koju Android 4.2 ne može sakriti).
+  Cijene goriva i vremenska prognoza su stvarni podaci od 16. i 17. novembra 2026; vijesti i podsjetnici su izmišljeni primjeri sadržaja.</p>
+
+  <!-- ================= 1. Pocetna, dan ================= -->
+  <div class="cap">1 · Početna, dan (svijetla tema, 14:32)</div>
+  <div class="frame" id="pocetna-dan">
+    <div class="app light">
+      <nav class="rail">
+        <div class="tab on"><svg class="ic"><use href="#i-home"/></svg>Početna</div>
+        <div class="tab"><svg class="ic"><use href="#i-cloudsun"/></svg>Vrijeme</div>
+        <div class="tab"><svg class="ic"><use href="#i-fuel"/></svg>Gorivo</div>
+        <div class="tab"><svg class="ic"><use href="#i-cal"/></svg>Kalendar</div>
+        <div class="tab"><svg class="ic"><use href="#i-news"/></svg>Vijesti</div>
+        <div class="tab"><svg class="ic"><use href="#i-ball"/></svg>Sport</div>
+        <div class="tab"><svg class="ic"><use href="#i-bell"/></svg>Podsjetnici</div>
+        <div class="tab"><svg class="ic"><use href="#i-tools"/></svg>Korisno</div>
+        <div class="tab"><svg class="ic"><use href="#i-sliders"/></svg>Postavke</div>
+      </nav>
+      <main class="main home">
+        <section class="panel clock">
+          <div class="time mono">14:32</div>
+          <div class="date">Utorak, 17. novembar 2026.</div>
+          <div class="next"><svg class="ic"><use href="#i-cal"/></svg><b>Dan državnosti</b> · srijeda, 25. novembar · neradni dan za 8 dana</div>
+        </section>
+        <section class="panel wx">
+          <div class="phead"><span class="label">Sarajevo · sada</span><span class="label mono">↑06:43 ↓16:18</span></div>
+          <div class="wx-main"><svg class="ic"><use href="#i-cloud"/></svg><span class="temp mono">13°</span></div>
+          <div class="wx-desc">Oblačno</div>
+          <div class="wx-sub">Osjećaj 11° · vlažnost 62%</div>
+          <div class="cells">
+            <div><div class="label">Min / maks</div><div class="v mono">6°/15°</div></div>
+            <div><div class="label">Kiša</div><div class="v mono">35<small>%</small></div></div>
+            <div><div class="label">Vjetar</div><div class="v mono">12<small> km/h</small></div></div>
+          </div>
+        </section>
+        <section class="banner">
+          <span class="lvl">ŽUTO</span><svg class="ic"><use href="#i-wind"/></svg>
+          <span><b>Upozorenje: vjetar</b> · Sarajevo · danas od 15:00 do sutra 15:00</span>
+          <span class="src">MeteoAlarm · FHMZ BiH</span>
+        </section>
+        <section class="panel rem">
+          <div class="phead"><span class="label">Podsjetnici</span><span class="label">Danas</span></div>
+          <div class="row"><span class="t mono">16:00</span><span class="txt">Lijek za pritisak</span><svg class="ic"><use href="#i-pill"/></svg></div>
+          <div class="row"><span class="t mono">18:30</span><span class="txt">Platiti račun za struju</span><svg class="ic"><use href="#i-receipt"/></svg></div>
+          <div class="row"><span class="t s">Sutra</span><span class="txt">09:30 Doktor</span><svg class="ic"><use href="#i-med"/></svg></div>
+        </section>
+        <section class="panel fuel">
+          <div class="phead"><span class="label">Gorivo danas</span><span class="label">KM/l</span></div>
+          <div class="row"><div><div class="label">Dizel</div><div class="st">Green Oil</div><div class="st2">Marka Marulića 4</div></div><span class="price mono">3,58</span></div>
+          <div class="row"><div><div class="label">Super 95</div><div class="st">Bingo Petrol</div><div class="st2">Džemala Bijedića 179A</div></div><span class="price mono">2,79</span></div>
+        </section>
+        <section class="panel news-tile">
+          <div class="phead"><span class="label">Vijesti</span><span class="label">klix.ba · 14:05</span></div>
+          <h2>Grijanje od ove subote i vikendom zbog najavljenog zahlađenja</h2>
+          <p>Stanovi priključeni na daljinsko grijanje od ove subote bit će grijani i tokom vikenda. Smetnje se mogu prijaviti dežurnoj službi.</p>
+        </section>
+      </main>
+      <footer class="status"><span><i class="dot warn"></i>Sync 14:32 · 7/8 izvora OK · WiFi OK</span><span>Baterija 31 °C</span></footer>
+    </div>
+    <div class="sysnav"><i style="left:347px"></i><i style="left:509px"></i><i style="left:671px"></i></div>
+  </div>
+
+  <!-- ================= 2. Pocetna, noc (Sutra) ================= -->
+  <div class="cap">2 · Početna, noć (tamna tema, 21:47; poslije 18:00 prikazuje sutrašnji dan)</div>
+  <div class="frame" id="pocetna-noc">
+    <div class="app dark">
+      <nav class="rail">
+        <div class="tab on"><svg class="ic"><use href="#i-home"/></svg>Početna</div>
+        <div class="tab"><svg class="ic"><use href="#i-cloudsun"/></svg>Vrijeme</div>
+        <div class="tab"><svg class="ic"><use href="#i-fuel"/></svg>Gorivo</div>
+        <div class="tab"><svg class="ic"><use href="#i-cal"/></svg>Kalendar</div>
+        <div class="tab"><svg class="ic"><use href="#i-news"/></svg>Vijesti</div>
+        <div class="tab"><svg class="ic"><use href="#i-ball"/></svg>Sport</div>
+        <div class="tab"><svg class="ic"><use href="#i-bell"/></svg>Podsjetnici</div>
+        <div class="tab"><svg class="ic"><use href="#i-tools"/></svg>Korisno</div>
+        <div class="tab"><svg class="ic"><use href="#i-sliders"/></svg>Postavke</div>
+      </nav>
+      <main class="main home">
+        <section class="panel clock">
+          <div class="time mono">21:47</div>
+          <div class="date">Utorak, 17. novembar 2026.</div>
+          <div class="next"><svg class="ic"><use href="#i-cal"/></svg><b>Dan državnosti</b> · srijeda, 25. novembar · neradni dan za 8 dana</div>
+        </section>
+        <section class="panel wx">
+          <div class="phead"><span class="label">Sutra · srijeda</span><span class="label mono">sada 9°</span></div>
+          <div class="wx-main"><svg class="ic"><use href="#i-rain"/></svg><span class="temp mono">19°</span></div>
+          <div class="wx-desc">Kišni pljuskovi</div>
+          <div class="wx-sub">Najniža 11° · izlazak sunca 06:44</div>
+          <div class="cells">
+            <div><div class="label">Min / maks</div><div class="v mono">11°/19°</div></div>
+            <div><div class="label">Kiša</div><div class="v mono">65<small>%</small></div></div>
+            <div><div class="label">Količina</div><div class="v mono">4,8<small> mm</small></div></div>
+          </div>
+        </section>
+        <section class="banner">
+          <span class="lvl">ŽUTO</span><svg class="ic"><use href="#i-wind"/></svg>
+          <span><b>Upozorenje: vjetar</b> · Sarajevo · traje do sutra 15:00</span>
+          <span class="src">MeteoAlarm · FHMZ BiH</span>
+        </section>
+        <section class="panel rem">
+          <div class="phead"><span class="label">Podsjetnici</span><span class="label">Sutra</span></div>
+          <div class="row"><span class="t mono">09:30</span><span class="txt">Doktor, Dom zdravlja</span><svg class="ic"><use href="#i-med"/></svg></div>
+          <div class="row"><span class="t mono">12:00</span><span class="txt">Registracija auta</span><svg class="ic"><use href="#i-car"/></svg></div>
+          <div class="row"><span class="t mono">18:00</span><span class="txt">Rođendan: Amra</span><svg class="ic"><use href="#i-cake"/></svg></div>
+        </section>
+        <section class="panel fuel">
+          <div class="phead"><span class="label">Gorivo danas</span><span class="label">KM/l</span></div>
+          <div class="row"><div><div class="label">Dizel</div><div class="st">Green Oil</div><div class="st2">Marka Marulića 4</div></div><span class="price mono">3,58</span></div>
+          <div class="row"><div><div class="label">Super 95</div><div class="st">Bingo Petrol</div><div class="st2">Džemala Bijedića 179A</div></div><span class="price mono">2,79</span></div>
+        </section>
+        <section class="panel news-tile">
+          <div class="phead"><span class="label">Vijesti</span><span class="label">n1info.ba · 21:20</span></div>
+          <h2>Na putevima mokri kolovozi, oprez zbog udara vjetra na prijevojima</h2>
+          <p>Vozačima se preporučuje prilagođena brzina i veći razmak između vozila. Moguće su kratke obustave za teretna vozila.</p>
+        </section>
+      </main>
+      <footer class="status"><span><i class="dot"></i>Sync 21:45 · 8/8 izvora OK · WiFi OK</span><span>Noćni režim · svjetlina 20% · baterija 30 °C</span></footer>
+    </div>
+    <div class="sysnav"><i style="left:347px"></i><i style="left:509px"></i><i style="left:671px"></i></div>
+  </div>
+
+  <!-- ================= 3. Gorivo ================= -->
+  <div class="cap">3 · Gorivo (Dizel odabran; stvarne cijene od 16.11.2026; LPG pokazuje oznaku za sumnjivu cijenu)</div>
+  <div class="frame" id="gorivo">
+    <div class="app light">
+      <nav class="rail">
+        <div class="tab"><svg class="ic"><use href="#i-home"/></svg>Početna</div>
+        <div class="tab"><svg class="ic"><use href="#i-cloudsun"/></svg>Vrijeme</div>
+        <div class="tab on"><svg class="ic"><use href="#i-fuel"/></svg>Gorivo</div>
+        <div class="tab"><svg class="ic"><use href="#i-cal"/></svg>Kalendar</div>
+        <div class="tab"><svg class="ic"><use href="#i-news"/></svg>Vijesti</div>
+        <div class="tab"><svg class="ic"><use href="#i-ball"/></svg>Sport</div>
+        <div class="tab"><svg class="ic"><use href="#i-bell"/></svg>Podsjetnici</div>
+        <div class="tab"><svg class="ic"><use href="#i-tools"/></svg>Korisno</div>
+        <div class="tab"><svg class="ic"><use href="#i-sliders"/></svg>Postavke</div>
+      </nav>
+      <main class="main fuelpage">
+        <div class="seg"><div class="on">Dizel</div><div>Super 95</div><div>Super 98</div><div>LPG</div></div>
+        <div class="fmeta"><span><b>Sarajevo</b> · 20 pumpi s dizelom</span><span>Cijene važe za 16.11.2026.</span></div>
+        <section class="panel list">
+          <div class="thead"><span class="label">#</span><span class="label">Pumpa</span><span class="label" style="text-align:right">KM po litru</span></div>
+          <div class="frow"><span class="rank mono">1</span><div><div class="sname">Green Oil</div><div class="addr"><svg class="ic"><use href="#i-pin"/></svg>Marka Marulića 4</div></div><div class="pcol"><span class="price mono best">3,58</span><div class="pd">16.11.</div></div></div>
+          <div class="frow"><span class="rank mono">2</span><div><div class="sname">Bingo Petrol</div><div class="addr"><svg class="ic"><use href="#i-pin"/></svg>Džemala Bijedića 179A</div></div><div class="pcol"><span class="price mono">3,59</span><div class="pd">16.11.</div></div></div>
+          <div class="frow"><span class="rank mono">3</span><div><div class="sname">Hifa Petrol</div><div class="addr"><svg class="ic"><use href="#i-pin"/></svg>Adema Buće bb</div></div><div class="pcol"><span class="price mono">3,59</span><div class="pd">16.11.</div></div></div>
+          <div class="frow"><span class="rank mono">4</span><div><div class="sname">Hifa Petrol</div><div class="addr"><svg class="ic"><use href="#i-pin"/></svg>Zabrđe bb</div></div><div class="pcol"><span class="price mono">3,62</span><div class="pd">16.11.</div></div></div>
+          <div class="frow"><span class="rank mono">5</span><div><div class="sname">Selex</div><div class="addr"><svg class="ic"><use href="#i-pin"/></svg>Milana Preloga 1A</div></div><div class="pcol"><span class="price mono">3,68</span><div class="pd">16.11.</div></div></div>
+        </section>
+        <section class="panel side">
+          <div class="sblock">
+            <div class="label">Dizel u Sarajevu</div>
+            <div class="kv"><span class="k">Najniža</span><span class="mono">3,58</span></div>
+            <div class="kv"><span class="k">Prosjek</span><span class="mono">3,73</span></div>
+            <div class="kv"><span class="k">Najviša</span><span class="mono">3,87</span></div>
+          </div>
+          <div class="sblock">
+            <div class="label">Najjeftinije ostalo</div>
+            <div class="kv"><span class="k">Super 95</span><span class="mono">2,79</span></div>
+            <div class="kv"><span class="k">Super 98</span><span class="mono">3,12</span></div>
+            <div class="kv"><span class="k">LPG <span class="tag">PROVJERITI</span></span><span class="mono">1,27</span></div>
+          </div>
+          <div class="srcnote">LPG 1,27 je 22% ispod prosjeka grada.<br>Izvor: uhvatipopust.ba (podaci FMT eOPC) · osvježeno 10:02</div>
+        </section>
+      </main>
+      <footer class="status"><span><i class="dot"></i>Sync 10:02 · 8/8 izvora OK · WiFi OK</span><span>Baterija 29 °C</span></footer>
+    </div>
+    <div class="sysnav"><i style="left:347px"></i><i style="left:509px"></i><i style="left:671px"></i></div>
+  </div>
+
+  <!-- ================= 4. Vijesti ================= -->
+  <div class="cap">4 · Vijesti (jedan izvor ne radi: njegove zadnje vijesti su posivljene)</div>
+  <div class="frame" id="vijesti">
+    <div class="app light">
+      <nav class="rail">
+        <div class="tab"><svg class="ic"><use href="#i-home"/></svg>Početna</div>
+        <div class="tab"><svg class="ic"><use href="#i-cloudsun"/></svg>Vrijeme</div>
+        <div class="tab"><svg class="ic"><use href="#i-fuel"/></svg>Gorivo</div>
+        <div class="tab"><svg class="ic"><use href="#i-cal"/></svg>Kalendar</div>
+        <div class="tab on"><svg class="ic"><use href="#i-news"/></svg>Vijesti</div>
+        <div class="tab"><svg class="ic"><use href="#i-ball"/></svg>Sport</div>
+        <div class="tab"><svg class="ic"><use href="#i-bell"/></svg>Podsjetnici</div>
+        <div class="tab"><svg class="ic"><use href="#i-tools"/></svg>Korisno</div>
+        <div class="tab"><svg class="ic"><use href="#i-sliders"/></svg>Postavke</div>
+      </nav>
+      <main class="main newspage" style="position:relative">
+        <div class="chips">
+          <span class="chip on">Sve</span><span class="chip">BiH</span><span class="chip">Sarajevo</span><span class="chip">Svijet</span><span class="chip">Ekonomija</span><span class="chip">Kultura</span>
+          <span class="srcs"><span><i class="dot"></i>klix.ba</span><span><i class="dot"></i>n1info.ba</span><span><i class="dot warn"></i>radiosarajevo.ba</span></span>
+        </div>
+        <article class="panel art">
+          <div class="meta"><span class="label">klix.ba · Sarajevo</span><span class="label mono">14:05</span></div>
+          <h2>Grijanje od ove subote i vikendom zbog najavljenog zahlađenja</h2>
+          <p>Stanovi priključeni na daljinsko grijanje od ove subote bit će grijani i tokom vikenda, u istom režimu kao radnim danima. Odluka je donesena zbog najavljenog pada temperatura u narednim danima. Korisnici koji primijete smetnje mogu ih prijaviti dežurnoj službi.</p>
+        </article>
+        <article class="panel art">
+          <div class="meta"><span class="label">n1info.ba · BiH</span><span class="label mono">13:48</span></div>
+          <h2>Na putevima mokri kolovozi, oprez zbog udara vjetra na prijevojima</h2>
+          <p>Vozači se upozoravaju na mokar i klizav kolovoz na većini dionica u zemlji. Na planinskim prijevojima moguće su kratkotrajne obustave saobraćaja za teretna vozila. Preporučuje se prilagođena brzina i veći razmak između vozila.</p>
+        </article>
+        <article class="panel art stale">
+          <div class="meta"><span class="label">radiosarajevo.ba · Sarajevo</span><span class="stale-tag">NEMA PODATAKA · ZADNJE 13:05</span></div>
+          <h2>Nova autobuska linija povezuje Bistrik i Baščaršiju od ponedjeljka</h2>
+          <p>Linija će saobraćati svakih 20 minuta od šest ujutro do deset uvečer. Karte se mogu kupiti kod vozača i na kioscima. Prevoznik najavljuje da će red vožnje biti prilagođen nakon prvog mjeseca.</p>
+        </article>
+        <article class="panel art">
+          <div class="meta"><span class="label">n1info.ba · Ekonomija</span><span class="label mono">12:40</span></div>
+          <h2>Cijene goriva ove sedmice bez većih promjena</h2>
+          <p>Prosječna cijena dizela u Federaciji ostala je na nivou prošle sedmice, dok je benzin neznatno pojeftinio na dijelu pumpi. Najveće razlike u cijenama i dalje su između gradova, a ne između distributera u istom gradu.</p>
+        </article>
+        <div class="scroll"></div>
+      </main>
+      <footer class="status"><span><i class="dot warn"></i>Sync 14:32 · 7/8 izvora OK · WiFi OK</span><span>Crna hronika skrivena · baterija 31 °C</span></footer>
+    </div>
+    <div class="sysnav"><i style="left:347px"></i><i style="left:509px"></i><i style="left:671px"></i></div>
+  </div>
+</div>
+<script>
+  // Mono punctuation is as wide as a digit; narrow it (the app does the same with a span).
+  document.querySelectorAll('.time, .temp, .price, .cells .v, .kv .mono, .rem .t.mono').forEach(function (el) {
+    el.innerHTML = el.innerHTML.replace(/(^|>)([^<]*)/g, function (m, a, txt) {
+      return a + txt.replace(/[:,\/]/g, '<span class="np">$&</span>').replace(/°/g, '<span class="deg">°</span>');
+    });
+  });
+  // ?frame=<id> shows a single frame without the page around it (used for screenshots).
+  var m = location.search.match(/frame=([a-z-]+)/);
+  if (m) {
+    document.body.classList.add('solo');
+    document.querySelectorAll('.frame').forEach(function (f) { if (f.id !== m[1]) f.style.display = 'none'; });
+  }
+</script>
+</body>
+</html>
