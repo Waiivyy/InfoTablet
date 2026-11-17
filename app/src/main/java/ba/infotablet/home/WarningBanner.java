@@ -20,6 +20,7 @@ import ba.infotablet.data.SourceState;
 import ba.infotablet.ui.FontSpan;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
+import ba.infotablet.ui.SmogText;
 import ba.infotablet.ui.Ui;
 import ba.infotablet.ui.WarningText;
 
@@ -38,15 +39,44 @@ public final class WarningBanner extends LinearLayout {
         setVisibility(GONE);
     }
 
-    /** Shows the first active warning (home region first). Returns true when visible. */
-    public boolean bind(SourceState st, long now) {
+    /**
+     * Shows an active smog episode first, otherwise the first active weather warning (home region
+     * first). Returns true when visible.
+     */
+    public boolean bind(SourceState st, SourceState smogState, long now) {
         removeAllViews();
         List<JSONObject> active = active(st, now);
+        JSONObject smog = SmogText.active(smogState, now);
+        Context c = getContext();
+        if (smog != null) {
+            String level = smog.optString("level");
+            addView(Ui.chip(c, SmogText.levelName(level), SmogText.levelColor(level), 0xFFFFFFFF));
+            View icon = Ui.icon(c, ba.infotablet.R.drawable.ic_fog, p.warn, 24);
+            LayoutParams il = new LayoutParams(Ui.dp(c, 24), Ui.dp(c, 24));
+            il.leftMargin = Ui.dp(c, 12);
+            il.rightMargin = Ui.dp(c, 12);
+            addView(icon, il);
+            SpannableStringBuilder b = new SpannableStringBuilder("Epizoda zagađenja zraka");
+            b.setSpan(new FontSpan(Fonts.medium()), 0, b.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            b.setSpan(new AbsoluteSizeSpan(Ui.dp(c, 16.5f)), 0, b.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            b.append(" · ").append(SmogText.zones(smog, level)).append(" · ").append(SmogText.shortMeasure(level));
+            TextView text = Ui.text(c, 15, Fonts.regular(), p.fg);
+            text.setText(b);
+            text.setSingleLine(true);
+            text.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            addView(text, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+            TextView s = Ui.text(c, 13, Fonts.regular(), p.fg2);
+            s.setText(active.isEmpty() ? "Vlada KS" : "još " + active.size() + " · Vlada KS");
+            LayoutParams sl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            sl.leftMargin = Ui.dp(c, 12);
+            addView(s, sl);
+            setVisibility(VISIBLE);
+            return true;
+        }
         if (active.isEmpty()) {
             setVisibility(GONE);
             return false;
         }
-        Context c = getContext();
         JSONObject w = active.get(0);
         int level = w.optInt("level");
         addView(Ui.chip(c, WarningText.levelName(level), WarningText.levelColor(level), WarningText.levelTextColor(level)));

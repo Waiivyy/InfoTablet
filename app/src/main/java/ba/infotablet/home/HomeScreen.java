@@ -8,6 +8,7 @@ import ba.infotablet.data.Cache;
 import ba.infotablet.fuel.FuelPanel;
 import ba.infotablet.news.NewsPanel;
 import ba.infotablet.sources.FuelSource;
+import ba.infotablet.sources.SmogSource;
 import ba.infotablet.sources.WarningsSource;
 import ba.infotablet.sources.WeatherSource;
 import ba.infotablet.ui.Palette;
@@ -53,7 +54,7 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         Context c = getContext();
         clock.update();
         weather.bind(Cache.get(c, WeatherSource.ID), weatherStaleMs, Settings.of(c).locationName(), now);
-        banner.bind(Cache.get(c, WarningsSource.ID), now);
+        banner.bind(Cache.get(c, WarningsSource.ID), Cache.get(c, SmogSource.ID), now);
         fuel.bind(Cache.get(c, FuelSource.ID), fuelStaleMs, now);
         news.bind(now);
     }

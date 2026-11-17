@@ -8,6 +8,8 @@ import android.widget.TextView;
 
 import java.util.Calendar;
 
+import ba.infotablet.calendar.Holidays;
+import ba.infotablet.ui.FontSpan;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.NarrowSpan;
 import ba.infotablet.ui.Palette;
@@ -18,13 +20,18 @@ import ba.infotablet.util.Clock;
 /** The large clock and date on Početna. Updated once a minute by the activity (ACTION_TIME_TICK). */
 public final class ClockPanel extends LinearLayout {
 
+    private final Palette p;
     private final TextView time;
     private final TextView date;
+    private final LinearLayout nextRow;
+    private final TextView nextText;
+    private String shownNext = null;
     private String shownTime = "";
     private String shownDate = "";
 
     public ClockPanel(Context c, Palette p) {
         super(c);
+        this.p = p;
         setOrientation(VERTICAL);
         setBackgroundDrawable(Ui.panel(c, p));
         setPadding(Ui.dp(c, 22), Ui.dp(c, 12), Ui.dp(c, 22), Ui.dp(c, 12));
@@ -46,6 +53,23 @@ public final class ClockPanel extends LinearLayout {
         View spacer = new View(c);
         addView(spacer, new LayoutParams(1, 0, 1f));
 
+        // Next holiday, as in the mockup: "Dan državnosti · srijeda, 25. novembar · neradni dan za 8 dana".
+        nextRow = new LinearLayout(c);
+        nextRow.setOrientation(VERTICAL);
+        nextRow.addView(Ui.hairline(c, p.soft), new LayoutParams(LayoutParams.MATCH_PARENT, Math.max(1, Ui.dp(c, 1))));
+        LinearLayout line = new LinearLayout(c);
+        line.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        line.setPadding(0, Ui.dp(c, 10), 0, 0);
+        line.addView(Ui.icon(c, ba.infotablet.R.drawable.ic_calendar, p.accent, 20));
+        nextText = Ui.text(c, 15.5f, Fonts.regular(), p.fg2);
+        nextText.setSingleLine(true);
+        LayoutParams nl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        nl.leftMargin = Ui.dp(c, 8);
+        line.addView(nextText, nl);
+        nextRow.addView(line);
+        nextRow.setVisibility(GONE);
+        addView(nextRow, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+
         update();
     }
 
@@ -61,6 +85,25 @@ public final class ClockPanel extends LinearLayout {
         if (!d.equals(shownDate)) {
             date.setText(d);
             shownDate = d;
+        }
+        Holidays.Day h = Holidays.next(Holidays.all(getContext()), now.getTimeInMillis(), 30);
+        String key = h == null ? "" : h.name + h.date + Holidays.daysUntil(now.getTimeInMillis(), h.date);
+        if (!key.equals(shownNext)) {
+            shownNext = key;
+            if (h == null) {
+                nextRow.setVisibility(GONE);
+            } else {
+                Calendar hc = Calendar.getInstance();
+                hc.setTimeInMillis(h.date);
+                android.text.SpannableStringBuilder b = new android.text.SpannableStringBuilder(h.name);
+                b.setSpan(new FontSpan(Fonts.medium()), 0, b.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                b.setSpan(new android.text.style.ForegroundColorSpan(p.fg), 0, b.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                b.append(" · ").append(BsDate.weekday(hc)).append(", ").append(String.valueOf(hc.get(Calendar.DAY_OF_MONTH))).append(". ").append(BsDate.month(hc))
+                        .append(" · ").append(h.state ? "neradni dan " : "vjerski praznik ")
+                        .append(Holidays.countdown(Holidays.daysUntil(now.getTimeInMillis(), h.date)));
+                nextText.setText(b);
+                nextRow.setVisibility(VISIBLE);
+            }
         }
     }
 }

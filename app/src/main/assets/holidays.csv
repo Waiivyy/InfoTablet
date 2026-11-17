@@ -1,0 +1,90 @@
+# Non-working days (state) and religious holidays in the Federation of BiH. Source and legal basis: docs/sources.md.
+date,name,kind,status
+2026-01-01,Nova godina,state,official
+2026-01-02,Nova godina,state,official
+2026-01-07,Božić (pravoslavni),religious,official
+2026-03-01,Dan nezavisnosti,state,official
+2026-03-02,Dan nezavisnosti (odluka Vlade FBiH),state,official
+2026-03-20,"Ramazanski bajram, 1. dan",religious,official
+2026-03-21,"Ramazanski bajram, 2. dan",religious,official
+2026-04-05,Uskrs (katolički),religious,official
+2026-04-06,Uskrsni ponedjeljak (katolički),religious,official
+2026-04-12,Vaskrs (pravoslavni),religious,official
+2026-04-13,Vaskrsni ponedjeljak (pravoslavni),religious,official
+2026-05-01,Praznik rada,state,official
+2026-05-02,Praznik rada,state,official
+2026-05-27,"Kurban-bajram, 1. dan",religious,official
+2026-05-28,"Kurban-bajram, 2. dan",religious,official
+2026-11-01,Svi sveti (katolički),religious,official
+2026-11-25,Dan državnosti,state,official
+2026-12-25,Božić (katolički),religious,official
+2027-01-01,Nova godina,state,official
+2027-01-02,Nova godina,state,official
+2027-01-07,Božić (pravoslavni),religious,official
+2027-03-01,Dan nezavisnosti,state,official
+2027-03-09,"Ramazanski bajram, 1. dan",religious,provisional
+2027-03-10,"Ramazanski bajram, 2. dan",religious,provisional
+2027-03-28,Uskrs (katolički),religious,official
+2027-03-29,Uskrsni ponedjeljak (katolički),religious,official
+2027-05-01,Praznik rada,state,official
+2027-05-02,Praznik rada,state,official
+2027-05-02,Vaskrs (pravoslavni),religious,official
+2027-05-03,Praznik rada (prenesen dan),state,official
+2027-05-03,Vaskrsni ponedjeljak (pravoslavni),religious,official
+2027-05-16,"Kurban-bajram, 1. dan",religious,provisional
+2027-05-17,"Kurban-bajram, 2. dan",religious,provisional
+2027-11-01,Svi sveti (katolički),religious,official
+2027-11-25,Dan državnosti,state,official
+2027-12-25,Božić (katolički),religious,official
+2028-01-01,Nova godina,state,official
+2028-01-02,Nova godina,state,official
+2028-01-03,Nova godina (prenesen dan),state,official
+2028-01-07,Božić (pravoslavni),religious,official
+2028-02-26,"Ramazanski bajram, 1. dan",religious,provisional
+2028-02-27,"Ramazanski bajram, 2. dan",religious,provisional
+2028-03-01,Dan nezavisnosti,state,official
+2028-04-16,Uskrs (katolički),religious,official
+2028-04-16,Vaskrs (pravoslavni) (isti dan kao katolički),religious,official
+2028-04-17,Uskrsni ponedjeljak (katolički),religious,official
+2028-04-17,Vaskrsni ponedjeljak (pravoslavni),religious,official
+2028-05-01,Praznik rada,state,official
+2028-05-02,Praznik rada,state,official
+2028-05-05,"Kurban-bajram, 1. dan",religious,provisional
+2028-05-06,"Kurban-bajram, 2. dan",religious,provisional
+2028-11-01,Svi sveti (katolički),religious,official
+2028-11-25,Dan državnosti,state,official
+2028-12-25,Božić (katolički),religious,official
+2029-01-01,Nova godina,state,official
+2029-01-02,Nova godina,state,official
+2029-01-07,Božić (pravoslavni),religious,official
+2029-02-14,"Ramazanski bajram, 1. dan",religious,provisional
+2029-02-15,"Ramazanski bajram, 2. dan",religious,provisional
+2029-03-01,Dan nezavisnosti,state,official
+2029-04-01,Uskrs (katolički),religious,official
+2029-04-02,Uskrsni ponedjeljak (katolički),religious,official
+2029-04-08,Vaskrs (pravoslavni),religious,official
+2029-04-09,Vaskrsni ponedjeljak (pravoslavni),religious,official
+2029-04-24,"Kurban-bajram, 1. dan",religious,provisional
+2029-04-25,"Kurban-bajram, 2. dan",religious,provisional
+2029-05-01,Praznik rada,state,official
+2029-05-02,Praznik rada,state,official
+2029-11-01,Svi sveti (katolički),religious,official
+2029-11-25,Dan državnosti,state,official
+2029-12-25,Božić (katolički),religious,official
+2030-01-01,Nova godina,state,official
+2030-01-02,Nova godina,state,official
+2030-01-07,Božić (pravoslavni),religious,official
+2030-02-04,"Ramazanski bajram, 1. dan",religious,provisional
+2030-02-05,"Ramazanski bajram, 2. dan",religious,provisional
+2030-03-01,Dan nezavisnosti,state,official
+2030-04-13,"Kurban-bajram, 1. dan",religious,provisional
+2030-04-14,"Kurban-bajram, 2. dan",religious,provisional
+2030-04-21,Uskrs (katolički),religious,official
+2030-04-22,Uskrsni ponedjeljak (katolički),religious,official
+2030-04-28,Vaskrs (pravoslavni),religious,official
+2030-04-29,Vaskrsni ponedjeljak (pravoslavni),religious,official
+2030-05-01,Praznik rada,state,official
+2030-05-02,Praznik rada,state,official
+2030-11-01,Svi sveti (katolički),religious,official
+2030-11-25,Dan državnosti,state,official
+2030-12-25,Božić (katolički),religious,official

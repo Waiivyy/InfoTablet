@@ -48,7 +48,8 @@ public final class Fmt {
 
     /** Whole days between the local dates of now and t (0 today, 1 tomorrow, -1 yesterday). */
     public static int dayOffset(long now, long t) {
-        return (int) ((startOfDay(t) - startOfDay(now) + 12 * 3600_000L) / 86_400_000L);
+        // Round, never truncate: -0.5 days must become -1 (yesterday), and DST days are 23 or 25 hours.
+        return (int) Math.round((startOfDay(t) - startOfDay(now)) / 86_400_000.0);
     }
 
     public static long startOfDay(long t) {

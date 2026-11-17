@@ -19,11 +19,13 @@ import android.widget.LinearLayout;
 
 import java.util.Locale;
 
+import ba.infotablet.calendar.CalendarScreen;
 import ba.infotablet.fuel.FuelScreen;
 import ba.infotablet.home.HomeScreen;
 import ba.infotablet.home.PlaceholderPanel;
 import ba.infotablet.news.NewsScreen;
 import ba.infotablet.sport.SportScreen;
+import ba.infotablet.useful.UsefulScreen;
 import ba.infotablet.sync.Scheduler;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Palette;
@@ -131,6 +133,10 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 FuelScreen f = new FuelScreen(this, palette);
                 screen = f;
                 view = f;
+            } else if (index == 3) {
+                CalendarScreen k = new CalendarScreen(this, palette);
+                screen = k;
+                view = k;
             } else if (index == 4) {
                 NewsScreen n = new NewsScreen(this, palette);
                 screen = n;
@@ -139,6 +145,10 @@ public final class MainActivity extends Activity implements Rail.Listener, Sched
                 SportScreen s = new SportScreen(this, palette);
                 screen = s;
                 view = s;
+            } else if (index == 7) {
+                UsefulScreen u = new UsefulScreen(this, palette);
+                screen = u;
+                view = u;
             } else {
                 screen = null;
                 FrameLayout wrap = new FrameLayout(this);
