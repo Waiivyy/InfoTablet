@@ -168,6 +168,15 @@ public final class Settings {
         return prefs.getString("sport_club", "");
     }
 
+    /** Streets and neighbourhoods for water, power, heating and gas notices (comma separated). */
+    public String streets() {
+        return prefs.getString("water_places", "");
+    }
+
+    public boolean hasStreets() {
+        return !streets().trim().isEmpty();
+    }
+
     /** Currencies shown in Korisno and on the rates tile, in order. */
     public List<String> currencies() {
         String s = prefs.getString("currencies", "USD,CHF,GBP");

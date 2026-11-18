@@ -13,8 +13,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
+import ba.infotablet.R;
 import ba.infotablet.Settings;
 import ba.infotablet.data.Cache;
 import ba.infotablet.data.SourceState;
@@ -22,6 +24,10 @@ import ba.infotablet.sources.RatesSource;
 import ba.infotablet.sources.RoadsParser;
 import ba.infotablet.sources.RoadsSource;
 import ba.infotablet.sources.SmogSource;
+import ba.infotablet.sources.GasSource;
+import ba.infotablet.sources.HeatSource;
+import ba.infotablet.sources.PowerSource;
+import ba.infotablet.sources.StreetNotices;
 import ba.infotablet.sources.WaterParser;
 import ba.infotablet.sources.WaterSource;
 import ba.infotablet.ui.Fonts;
@@ -32,6 +38,7 @@ import ba.infotablet.ui.Refreshable;
 import ba.infotablet.ui.SmogText;
 import ba.infotablet.ui.SpanGrid;
 import ba.infotablet.ui.Ui;
+import ba.infotablet.util.BsDate;
 import ba.infotablet.util.Fmt;
 
 /** Korisno: exchange rates, water works for your streets, smog episode, roads and borders, winter equipment. */
@@ -77,7 +84,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
     public void refresh(long now) {
         Context c = getContext();
         bindRates(c, Cache.get(c, RatesSource.ID), new RatesSource().staleAfterMs(), now);
-        bindWater(c, Cache.get(c, WaterSource.ID), new WaterSource().staleAfterMs(), now);
+        bindWater(c, now);
         bindSmog(c, Cache.get(c, SmogSource.ID), new SmogSource().staleAfterMs(), now);
         bindRoads(c, Cache.get(c, RoadsSource.ID), new RoadsSource().staleAfterMs(), now);
         bindWinter(c, now);
@@ -141,72 +148,81 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
         return "";
     }
 
-    // ---- Water ----
+    // ---- Water, power, heating and gas for the configured streets ----
 
-    private void bindWater(Context c, SourceState st, long staleMs, long now) {
+    private static final String[][] NOTICE_SOURCES = {
+            {WaterSource.ID, "voda"}, {PowerSource.ID, "struja"}, {HeatSource.ID, "grijanje"}, {GasSource.ID, "plin"}};
+
+    private void bindWater(Context c, long now) {
         water.removeAllViews();
-        water.addView(Ui.label(c, p, "Voda · ViK Sarajevo"));
-        String places = Settings.of(c).getString("water_places");
+        water.addView(Ui.label(c, p, "Voda · struja · grijanje · plin"));
+        String places = Settings.of(c).streets();
         if (places.trim().isEmpty()) {
             water.addView(center(c, "Ulice nisu podešene"), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
             water.addView(small(c, "Ulice i naselje se podešavaju u postavkama."));
             return;
         }
-        Freshness f = Freshness.of(st, staleMs, now);
-        LinearLayout list = new LinearLayout(c);
-        list.setOrientation(LinearLayout.VERTICAL);
-        int shown = 0;
-        try {
-            JSONArray n = f.hasData ? new JSONObject(st.payload).getJSONArray("notices") : new JSONArray();
-            long today = Fmt.startOfDay(now), tomorrow = today + 86_400_000L;
-            for (int i = 0; i < n.length() && shown < 2; i++) {
-                JSONObject o = n.getJSONObject(i);
-                if (!"voda".equals(o.optString("kind"))) continue;
-                String when = null;
-                JSONArray days = o.optJSONArray("days");
-                for (int k = 0; days != null && k < days.length(); k++) {
-                    long d = days.optLong(k);
-                    if (Math.abs(d - today) < 3 * 3600_000L) when = "Danas";
-                    else if (Math.abs(d - tomorrow) < 3 * 3600_000L && when == null) when = "Sutra";
-                }
-                if (when == null || !WaterParser.matches(o.optString("body"), places)) continue;
-                list.addView(waterItem(c, when, WaterParser.relevantPart(o.optString("body"), places)));
-                shown++;
+        String[] payloads = new String[4];
+        long oldest = Long.MAX_VALUE;
+        int withData = 0;
+        StringBuilder missing = new StringBuilder();
+        for (int i = 0; i < NOTICE_SOURCES.length; i++) {
+            SourceState st = Cache.get(c, NOTICE_SOURCES[i][0]);
+            Freshness f = Freshness.of(st, 12 * 3600_000L, now);
+            if (f.hasData) withData++;
+            if (f.hasData && !f.stale) {
+                payloads[i] = st.payload;
+                oldest = Math.min(oldest, st.okAt);
+            } else {
+                if (f.hasData) payloads[i] = st.payload;
+                missing.append(missing.length() == 0 ? "" : ", ").append(NOTICE_SOURCES[i][1]);
             }
-        } catch (JSONException ignored) {
-            shown = 0;
         }
-        if (!f.hasData) {
-            water.addView(center(c, f.note), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-            return;
-        }
-        if (shown == 0) {
-            water.addView(center(c, "Nema obavijesti za vaše ulice"), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        long today = Fmt.startOfDay(now);
+        List<StreetNotices.Notice> all = StreetNotices.all(payloads[0], payloads[1], payloads[2], payloads[3], places, now);
+        if (all.isEmpty()) {
+            water.addView(center(c, withData == 0 ? "Nema podataka" : "Nema obavijesti za vaše ulice"),
+                    new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         } else {
+            LinearLayout list = new LinearLayout(c);
+            list.setOrientation(LinearLayout.VERTICAL);
+            for (int i = 0; i < all.size() && i < 3; i++) list.addView(noticeItem(c, all.get(i), now, all.size() > 1));
             water.addView(list, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         }
-        water.addView(small(c, f.stale ? f.note : "Provjereno " + Fmt.when(now, st.okAt)));
+        String foot = missing.length() > 0 ? "Bez svježih podataka: " + missing
+                : oldest == Long.MAX_VALUE ? "" : "Provjereno " + Fmt.when(now, oldest);
+        if (all.size() > 3) foot = "Još " + (all.size() - 3) + " · " + foot;
+        water.addView(small(c, foot));
     }
 
-    private View waterItem(Context c, String when, String body) {
+    private View noticeItem(Context c, StreetNotices.Notice n, long now, boolean several) {
         LinearLayout item = new LinearLayout(c);
         item.setOrientation(LinearLayout.VERTICAL);
         item.setPadding(0, Ui.dp(c, 8), 0, 0);
         LinearLayout head = new LinearLayout(c);
         head.setGravity(Gravity.CENTER_VERTICAL);
+        int off = Fmt.dayOffset(now, n.day);
+        String when = n.announcement ? "Najava" : off <= 0 ? "Danas" : off == 1 ? "Sutra" : BsDate.capitalize(Fmt.shortWeekday(n.day)) + " " + Fmt.dayMonth(n.day);
         head.addView(Ui.chip(c, when, p.warnTint, p.warn));
+        int res = StreetNotices.POWER.equals(n.kind) ? R.drawable.ic_bolt
+                : StreetNotices.WATER.equals(n.kind) ? R.drawable.ic_droplet : R.drawable.ic_flame;
+        LinearLayout.LayoutParams il = new LinearLayout.LayoutParams(Ui.dp(c, 18), Ui.dp(c, 18));
+        il.leftMargin = Ui.dp(c, 8);
+        head.addView(Ui.icon(c, res, p.fg2, 18), il);
         TextView title = Ui.text(c, 15, Fonts.medium(), p.fg);
-        title.setText("Mogući prekid vode");
-        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        tl.leftMargin = Ui.dp(c, 8);
+        title.setText(n.title);
+        title.setMaxLines(2);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        tl.leftMargin = Ui.dp(c, 6);
         head.addView(title, tl);
         item.addView(head);
         TextView t = Ui.text(c, 14, Fonts.regular(), p.fg);
-        t.setText(body);
-        t.setMaxLines(4);
+        t.setText(n.detail);
+        t.setMaxLines(several ? 2 : 4);
         t.setEllipsize(TextUtils.TruncateAt.END);
         t.setLineSpacing(Ui.dp(c, 2), 1f);
-        t.setPadding(0, Ui.dp(c, 5), 0, 0);
+        t.setPadding(0, Ui.dp(c, 4), 0, 0);
         item.addView(t);
         return item;
     }

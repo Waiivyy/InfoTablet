@@ -24,6 +24,8 @@ public final class NewsParser {
     /** One feed entry before the article text is fetched. */
     public static final class Item {
         public String title = "", link = "", summary = "";
+        /** Full text (WordPress content:encoded), capped; empty for most feeds. */
+        public String content = "";
         public long time;
         public final List<String> categories = new ArrayList<String>();
     }
@@ -79,6 +81,9 @@ public final class NewsParser {
                         if (t > 0 && cur.time == 0) cur.time = t;
                     } else if ("description".equals(n) || "summary".equals(n)) {
                         cur.summary = clean(Jsoup.parse(x.nextText()).text());
+                    } else if ("content:encoded".equals(n)) {
+                        String t = clean(Jsoup.parse(x.nextText()).text());
+                        cur.content = t.length() > 4000 ? t.substring(0, 4000) : t;
                     } else if ("category".equals(n)) {
                         String term = x.getAttributeValue(null, "term");
                         cur.categories.add(clean(term != null ? term : x.nextText()));

@@ -47,7 +47,9 @@ public final class ConfigReceiver extends BroadcastReceiver {
         Log.i("InfoTablet", "config: " + key + " updated");
         Scheduler s = Scheduler.get(ctx);
         if (key.equals("sport_club")) s.refreshNow("sport");
-        if (key.equals("water_places")) s.refreshNow("water");
+        if (key.equals("water_places")) {
+            for (String id : new String[] {"water", "power", "heat", "gas"}) s.refreshNow(id);
+        }
         if (key.equals("city")) {
             s.refreshNow("weather");
             s.refreshNow("warnings");

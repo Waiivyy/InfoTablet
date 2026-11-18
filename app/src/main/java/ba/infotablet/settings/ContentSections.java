@@ -195,14 +195,14 @@ final class ContentSections {
             InputMethodManager imm = (InputMethodManager) s.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(field.getWindowToken(), 0);
             st.putString("water_places", field.getText().toString().trim().replaceAll("\\s+", " "));
-            Scheduler.get(s.getContext()).refreshNow(WaterSource.ID);
+            for (String id : new String[] {WaterSource.ID, "power", "heat", "gas"}) Scheduler.get(s.getContext()).refreshNow(id);
             s.changed();
         });
         LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, Ui.dp(c, 46));
         sl.leftMargin = Ui.dp(c, 10);
         box.addView(save, sl);
-        Sections.add(out, p, Controls.block(c, p, "Ulice za obavještenja o vodi",
-                "Naselje i ulice odvojene zarezom. Više naziva iste ulice: Kačanik mali|Mali Kačanik. Obavijest ViK-a se prikaže kad se neko od njih spominje.", box));
+        Sections.add(out, p, Controls.block(c, p, "Ulice za obavještenja",
+                "Naselje i ulice odvojene zarezom. Više naziva iste ulice: Kačanik mali|Mali Kačanik. Obavijesti za vodu, struju, grijanje i plin se prikažu kad se neko od njih spominje.", box));
     }
 
     // ---- Izvori podataka ----

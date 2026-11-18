@@ -28,6 +28,9 @@ Verified on 2026-11-16/17 by fetching every source live. This file records what 
 | Exchange rates | CBBH daily list | JSON | daily after 16:05 | Works |
 | Holidays | Built-in table 2026 to 2030 | static | app updates | Works; religious days are not general days off |
 | Water works | ViK Sarajevo service notices | HTML | 30 to 60 min on working days | Works |
+| Power cuts | Elektroprivreda BiH planned outages | HTML (one table) | 3 h | Works; planned cuts only |
+| Heating | Toplane-Sarajevo: unheated buildings today, announcements | HTML | 45 min by day in the heating season | Works |
+| Gas works | Sarajevogas news feed | RSS (WordPress) | 3 h | Works; notices are rare |
 | Roads and borders | BIHAMK | RSS (HTML inside) + HTML | 30 to 60 min, 06 to 21 h | Works |
 | Winter equipment | Static rule (1 Nov to 1 Apr) | none | none | n/a |
 | Updates | GitHub Releases API | JSON | monthly, on demand, after 2 days of failures | Works |
@@ -229,6 +232,32 @@ Each row is stored with a status (`official`, `computed`, `provisional`) so prov
 - **Poll:** every 30 to 60 min on working days 07:00 to 17:00, every 2 to 3 hours otherwise. Change detection: first `/clanak/<id>`.
 - **Terms:** robots.txt sets no restrictions; no terms page. Credit "ViK Sarajevo".
 
+## Power, heating and gas notices
+
+Shown together with the water notices: in Korisno ("Voda · struja · grijanje · plin") and, for today and tomorrow, in the banner row of Početna (a weather or smog warning takes the row first). All three use the ViK street matcher and the same street list, and run only when streets are set.
+
+### Power cuts: Elektroprivreda BiH
+
+- **URL:** `https://www.epbih.ba/stranica/servisne-informacije`: one server-rendered page (about 270 KB, no compression, no ETag) with every planned cut in the Federation for the next 2 to 3 days. The area and municipality dropdowns only hide rows in the browser; there is no feed or JSON behind them.
+- **Rows:** `table.iskljucenja_tabela tr.item[data-ed=edsa]` (Elektrodistribucija Sarajevo), cells: municipality, `td.ulica` (one street or settlement per row), house numbers, date `dd.MM.yyyy`, time `HH:mm-HH:mm`. Street spellings vary ("Armije Rbih", "Vroce"), so the case- and diacritic-folding matcher matters.
+- **Display:** "Bez struje od 08:30 do 15:00" with the street and house numbers. A cut for today drops out once its end time has passed. Unplanned cuts are not published anywhere.
+- **Poll:** every 3 hours (about 2 MB a day); only the Sarajevo rows are cached (about 27 KB).
+- **Terms:** robots.txt has no rules. The terms allow loading and printing information "za potrebe gledanja i čitanja u nekomercijalne svrhe" and forbid republishing; they also say information may not be obtained "na način koji nije omogućen ili ponuđen preko stranice". The app reads the public page for private, non-commercial display in one household and republishes nothing; the owner accepted that reading. Credit "Elektroprivreda BiH".
+- **TLS:** Sectigo OV certificate (USERTrust root), not behind Cloudflare; works on the tablet.
+
+### Heating: Toplane-Sarajevo
+
+- **Today:** `https://www.toplanesarajevo.ba/korisnici/obavijest-o-radovima` (9 KB): heading `div.blank-header h3` ("... na dan 18.11.2026."), table rows with 8 cells: boiler house, address (free text), responsibility, contractor, start, planned end ("-" when unknown), flats, reason. Covers planned work and faults.
+- **Announcements:** the homepage (`div.news`, title and description) links to `/novost/{id}/{slug}`; only items whose text mentions "prekid", "isporuk" or "obustav" are opened (at most three). Article: `article.news time[datetime]`, `h3` title (all caps on the site, shown in sentence case), body `div.col-lg-9 p` with addresses one per line. Shown for 5 days after posting, as "Najava".
+- **Poll:** every 45 minutes from 06 to 21 h in the heating season (October to April), every 3 hours at night, every 6 hours outside the season.
+- **Terms:** robots.txt has no rules; no terms page ("Sva prava zadržana"). Credit "Toplane-Sarajevo".
+
+### Gas works: Sarajevogas
+
+- **URL:** `https://www.sarajevogas.ba/feed/` (WordPress RSS, 10 items, full text in `content:encoded`). Works notices name the street in the title or text ("Sanacija curenja gasa u Dobrinjskoj ulici"); they are rare.
+- **Display:** posts from the last 5 days that mention a configured street, as "Najava".
+- **Poll:** every 3 hours. **Terms:** robots.txt blocks only `/wp-admin/`; no terms page. Credit "Sarajevogas".
+
 ## Roads and borders: BIHAMK
 
 - **RSS:** `https://bihamk.ba/spi/stanje-na-cesti-u-bih/rss` (4 KB gzip): one `item` whose `description` CDATA holds HTML: `div.category` (`h2`: Granični prijelazi, Autoceste, Magistralne ceste, Regionalne ceste, Gradske ceste) with `div.row` entries (`h3` title, `p` text). Parse the CDATA with `Jsoup.parseBodyFragment`. The feed dates are the request time; ignore them.
@@ -259,7 +288,7 @@ Winter equipment is mandatory in BiH from 1 November to 1 April. The app shows a
 - Conscrypt modernises the TLS protocol and ciphers but uses the system trust store, so it does not fix missing roots. The app therefore ships a small bundle of current root certificates and trusts system roots plus the bundle.
 - The development Mac's traffic goes through a TLS-inspecting gateway, so real certificate chains cannot be inspected from it. The definitive check is the on-device HTTPS test against every host below (Phase 3).
 
-Hosts the app contacts: `api.open-meteo.com`, `air-quality-api.open-meteo.com`, `zrak.fhmzbih.gov.ba`, `www.fhmzbih.gov.ba`, `feeds.meteoalarm.org`, `uhvatipopust.ba`, `www.klix.ba`, `n1info.ba`, `radiosarajevo.ba`, `www.nfsbih.ba`, `www.thesportsdb.com` (fallback), `www.cbbh.ba`, `www.viksa.ba`, `bihamk.ba`, `api.github.com`, `github.com`, `release-assets.githubusercontent.com`, `vlada.ks.gov.ba`.
+Hosts the app contacts: `api.open-meteo.com`, `air-quality-api.open-meteo.com`, `zrak.fhmzbih.gov.ba`, `www.fhmzbih.gov.ba`, `feeds.meteoalarm.org`, `uhvatipopust.ba`, `www.klix.ba`, `n1info.ba`, `radiosarajevo.ba`, `www.nfsbih.ba`, `www.thesportsdb.com` (fallback), `www.cbbh.ba`, `www.viksa.ba`, `bihamk.ba`, `www.epbih.ba`, `www.toplanesarajevo.ba`, `www.sarajevogas.ba`, `api.github.com`, `github.com`, `release-assets.githubusercontent.com`, `vlada.ks.gov.ba`.
 
 ## Daily request estimate
 
