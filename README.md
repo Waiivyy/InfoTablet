@@ -69,12 +69,17 @@ or `PD`) and `sport_club` (also chosen in Postavke, Sadržaj), `football_key` (s
 `water_places` (streets for the water, power, heating and gas notices), `city`, `city2`, and `pin`.
 A value of `-` clears the setting (for `pin`: removes a forgotten PIN).
 
+Android 4.2's adb service writes every `adb shell <command>` it receives to the tablet's system
+log, and the computer's shell history keeps it too. For anything secret, type the command inside
+an interactive `adb shell` instead, which is not logged and keeps no history on the tablet.
+
 The Premier League, Bundesliga and La Liga come from football-data.org, which needs a free key
-(register at football-data.org). Set it from your own terminal so it never lands in a file or a
-chat; it is not included in backups, so set it again after a reset:
+(register at football-data.org). It is not included in backups, so set it again after a reset:
 
 ```sh
-adb shell am broadcast -a ba.infotablet.CONFIG --es key football_key --es value <your key>
+adb shell
+am broadcast -a ba.infotablet.CONFIG --es key football_key --es value <your key>
+exit
 ```
 
 ## Looking after the tablet
