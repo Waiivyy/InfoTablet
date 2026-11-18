@@ -30,15 +30,37 @@ public final class ReminderText {
         }
     }
 
-    /** The repeat text plus the category name, for list rows: "svaki dan · Lijek". */
+    /** The repeat text plus the category name, for list rows: "svaki dan · Lijek", "jednom · bez zvona". */
     public static String details(Reminder r) {
+        return details(r, true);
+    }
+
+    /** As above; withAllDay false where the row already says "cijeli dan". */
+    public static String details(Reminder r, boolean withAllDay) {
         String cat = Reminder.categoryName(r.category);
-        return cat.isEmpty() ? repeat(r) : repeat(r) + " · " + cat;
+        String s = cat.isEmpty() ? repeat(r) : repeat(r) + " · " + cat;
+        if (r.allDay) return withAllDay ? s + " · cijeli dan" : s;
+        return r.ring ? s : s + " · bez zvona";
+    }
+
+    /** The time column: "16:00", or "cijeli dan" for a whole-day plan. */
+    public static String time(Reminder r, long at) {
+        return r.allDay ? "cijeli dan" : Fmt.hhmm(at);
     }
 
     /** "danas 16:00", "sutra 09:30", "pet 20.11. 10:00". */
     public static String when(long now, long at) {
         return Fmt.relDay(now, at) + " " + Fmt.hhmm(at);
+    }
+
+    public static String when(Reminder r, long now, long at) {
+        return r.allDay ? Fmt.relDay(now, at) + ", cijeli dan" : when(now, at);
+    }
+
+    /** Plans without a category get the calendar icon instead of the bell. */
+    public static int icon(Reminder r) {
+        if (!r.ring && r.category.isEmpty()) return R.drawable.ic_calendar;
+        return icon(r.category);
     }
 
     public static int icon(String category) {

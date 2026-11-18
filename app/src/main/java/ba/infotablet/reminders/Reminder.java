@@ -16,6 +16,10 @@ public final class Reminder {
     public int hour, minute;
     public int repeat = ONCE;
     public String category = "";
+    /** False: shown in lists and the calendar but never rings (a plan). */
+    public boolean ring = true;
+    /** A plan for the whole day: no time, never rings; hour and minute are 0. */
+    public boolean allDay;
 
     /** Every occurrence at or before this instant has been dealt with ("Gotovo", or edited). */
     public long handledUntil;
@@ -35,6 +39,8 @@ public final class Reminder {
         r.minute = minute;
         r.repeat = repeat;
         r.category = category;
+        r.ring = ring;
+        r.allDay = allDay;
         r.handledUntil = handledUntil;
         r.snoozeFor = snoozeFor;
         r.snoozeUntil = snoozeUntil;
@@ -56,6 +62,23 @@ public final class Reminder {
     public static boolean validCategory(String key) {
         for (String k : CATEGORIES) if (k.equals(key)) return true;
         return false;
+    }
+
+    /** Editor modes: rings at its time, a silent entry at a time, or a whole-day plan. */
+    public static final int MODE_RING = 0, MODE_SILENT = 1, MODE_ALL_DAY = 2;
+    public static final String[] MODE_SHORT = {"Zvoni", "Bez zvona", "Cijeli dan"};
+
+    public int mode() {
+        return allDay ? MODE_ALL_DAY : ring ? MODE_RING : MODE_SILENT;
+    }
+
+    public void setMode(int mode) {
+        allDay = mode == MODE_ALL_DAY;
+        ring = mode == MODE_RING;
+        if (allDay) {
+            hour = 0;
+            minute = 0;
+        }
     }
 
     /** Short segment labels for the editor. */

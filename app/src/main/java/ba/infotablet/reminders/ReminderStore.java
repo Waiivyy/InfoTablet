@@ -19,7 +19,7 @@ import ba.infotablet.sync.Scheduler;
 public final class ReminderStore {
 
     private static final String[] COLUMNS = {"id", "text", "year", "month", "day", "hour", "minute", "repeat", "category",
-            "handled_until", "snooze_for", "snooze_until", "rings", "created_at", "updated_at"};
+            "handled_until", "snooze_for", "snooze_until", "rings", "created_at", "updated_at", "ring", "all_day"};
 
     /** Bumped on every change, so screens can tell when to rebuild. */
     private static volatile int version;
@@ -86,6 +86,11 @@ public final class ReminderStore {
 
     /** "Gotovo": everything up to now is handled. */
     public static void done(Context ctx, long id, long now) {
+        Reminder r = get(ctx, id);
+        if (r != null) {
+            long due = Agenda.due(r, now);
+            if (due != Agenda.NONE) log(ctx, r, due, History.DONE, now);
+        }
         ContentValues v = new ContentValues();
         v.put("handled_until", now);
         v.put("snooze_for", 0);
@@ -96,6 +101,8 @@ public final class ReminderStore {
 
     /** "Odgodi 10 min" pressed: rings again at until. */
     public static void snooze(Context ctx, long id, long dueAt, long until) {
+        Reminder r = get(ctx, id);
+        if (r != null) log(ctx, r, dueAt, History.SNOOZE, ba.infotablet.util.Clock.now());
         ContentValues v = new ContentValues();
         v.put("snooze_for", dueAt);
         v.put("snooze_until", until);
@@ -113,6 +120,7 @@ public final class ReminderStore {
         v.put("snooze_until", rings >= Agenda.MAX_RINGS ? Long.MAX_VALUE : now + Agenda.SNOOZE_MS);
         v.put("rings", rings);
         update(ctx, id, v);
+        if (rings >= Agenda.MAX_RINGS) log(ctx, r, dueAt, History.MISSED, now);
     }
 
     /** Drops one-time reminders that finished more than 30 days ago. Returns how many were removed. */
@@ -125,7 +133,37 @@ public final class ReminderStore {
             }
         }
         if (n > 0) version++;
+        Db.get(ctx).getWritableDatabase().delete("reminder_log", "at < ?", new String[] {String.valueOf(now - History.KEEP_MS)});
         return n;
+    }
+
+    // ---- history ----
+
+    private static void log(Context ctx, Reminder r, long dueAt, String kind, long at) {
+        ContentValues v = new ContentValues();
+        v.put("reminder_id", r.id);
+        v.put("due_at", dueAt);
+        v.put("text", r.text);
+        v.put("category", r.category);
+        v.put("kind", kind);
+        v.put("at", at);
+        Db.get(ctx).getWritableDatabase().insert("reminder_log", null, v);
+    }
+
+    /** Rings due since the given time, newest first. */
+    public static List<History.Row> history(Context ctx, long since) {
+        List<History.Event> events = new ArrayList<History.Event>();
+        Cursor c = Db.get(ctx).getReadableDatabase().query("reminder_log",
+                new String[] {"reminder_id", "due_at", "text", "category", "kind", "at"},
+                "due_at >= ?", new String[] {String.valueOf(since)}, null, null, "at");
+        try {
+            while (c.moveToNext()) {
+                events.add(new History.Event(c.getLong(0), c.getLong(1), c.getString(2), c.getString(3), c.getString(4), c.getLong(5)));
+            }
+        } finally {
+            c.close();
+        }
+        return History.rows(events);
     }
 
     private static void update(Context ctx, long id, ContentValues v) {
@@ -156,6 +194,8 @@ public final class ReminderStore {
         v.put("rings", r.rings);
         v.put("created_at", r.createdAt);
         v.put("updated_at", r.updatedAt);
+        v.put("ring", r.ring ? 1 : 0);
+        v.put("all_day", r.allDay ? 1 : 0);
         return v;
     }
 
@@ -176,6 +216,8 @@ public final class ReminderStore {
         r.rings = c.getInt(12);
         r.createdAt = c.getLong(13);
         r.updatedAt = c.getLong(14);
+        r.ring = c.getInt(15) != 0;
+        r.allDay = c.getInt(16) != 0;
         return r;
     }
 }

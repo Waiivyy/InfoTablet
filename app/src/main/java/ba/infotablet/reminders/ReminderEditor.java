@@ -45,6 +45,9 @@ public final class ReminderEditor extends LinearLayout {
     private final EditText text;
     private final TextView error, date, hour, minute;
     private final TextView[] repeatButtons = new TextView[Reminder.REPEAT_SHORT.length];
+    private final TextView[] modeButtons = new TextView[Reminder.MODE_SHORT.length];
+    private final TextView heading, allDayNote;
+    private final LinearLayout timeSteps;
     private final View[] kindButtons = new View[Reminder.CATEGORIES.length];
     private TextView delete;
     private boolean confirmDelete;
@@ -53,8 +56,8 @@ public final class ReminderEditor extends LinearLayout {
         super(c);
         this.p = p;
         this.listener = listener;
-        this.isNew = existing == null;
-        this.draft = isNew ? fresh(Clock.now()) : existing.copy();
+        this.isNew = existing == null || existing.id == 0;   // id 0: a new entry with preset values
+        this.draft = existing == null ? fresh(Clock.now()) : existing.copy();
         setOrientation(VERTICAL);
         setBackgroundDrawable(Ui.panel(c, p));
         setPadding(Ui.dp(c, 16), Ui.dp(c, 13), Ui.dp(c, 16), Ui.dp(c, 14));
@@ -62,7 +65,7 @@ public final class ReminderEditor extends LinearLayout {
         setFocusableInTouchMode(true);
 
         LinearLayout head = new LinearLayout(c);
-        TextView heading = Ui.label(c, p, isNew ? "Novi podsjetnik" : "Uredi podsjetnik");
+        heading = Ui.label(c, p, "");
         head.addView(heading, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
         error = Ui.text(c, 13, Fonts.medium(), p.alert);
         error.setSingleLine(true);
@@ -107,10 +110,33 @@ public final class ReminderEditor extends LinearLayout {
         dateRow.addView(step(c, R.drawable.ic_chevrons_right, () -> moveDate(Calendar.MONTH, 1)), square(c, 6));
         addView(dateRow);
 
-        // Time: hours and minutes (5-minute steps), each with its own minus and plus.
-        addView(section(c, "Vrijeme"));
+        // Time: rings, silent or the whole day; then hours and minutes (5-minute steps).
+        LinearLayout timeHead = new LinearLayout(c);
+        timeHead.setGravity(Gravity.CENTER_VERTICAL);
+        timeHead.setPadding(0, Ui.dp(c, 9), 0, Ui.dp(c, 6));
+        timeHead.addView(Ui.label(c, p, "Vrijeme"), new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+        for (int i = 0; i < modeButtons.length; i++) {
+            final int value = i;
+            TextView b = Ui.text(c, 13.5f, Fonts.medium(), p.fg);
+            b.setText(Reminder.MODE_SHORT[i]);
+            b.setGravity(Gravity.CENTER);
+            b.setSingleLine(true);
+            b.setPadding(Ui.dp(c, 12), 0, Ui.dp(c, 12), 0);
+            b.setClickable(true);
+            b.setOnClickListener(v -> {
+                hideKeyboard();
+                draft.setMode(value);
+                render();
+            });
+            modeButtons[i] = b;
+            LayoutParams bl = new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 34));
+            bl.leftMargin = Ui.dp(c, 6);
+            timeHead.addView(b, bl);
+        }
+        addView(timeHead);
         LinearLayout timeRow = new LinearLayout(c);
         timeRow.setGravity(Gravity.CENTER_VERTICAL);
+        timeSteps = timeRow;
         timeRow.addView(step(c, R.drawable.ic_minus, () -> moveTime(-60)), square(c, 0));
         hour = number(c);
         timeRow.addView(hour, new LayoutParams(Ui.dp(c, 64), LayoutParams.WRAP_CONTENT));
@@ -123,7 +149,13 @@ public final class ReminderEditor extends LinearLayout {
         minute = number(c);
         timeRow.addView(minute, new LayoutParams(Ui.dp(c, 64), LayoutParams.WRAP_CONTENT));
         timeRow.addView(step(c, R.drawable.ic_plus, () -> moveTime(5)), square(c, 0));
-        addView(timeRow);
+        android.widget.FrameLayout timeBox = new android.widget.FrameLayout(c);
+        timeBox.addView(timeRow, new android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
+        allDayNote = Ui.text(c, 16, Fonts.regular(), p.fg2);
+        allDayNote.setText("Za cijeli dan, bez zvona. Vidi se na početnom ekranu i u kalendaru.");
+        allDayNote.setGravity(Gravity.CENTER_VERTICAL);
+        timeBox.addView(allDayNote, new android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
+        addView(timeBox, new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
 
         addView(section(c, "Ponavljanje"));
         LinearLayout repeatRow = new LinearLayout(c);
@@ -292,6 +324,17 @@ public final class ReminderEditor extends LinearLayout {
         date.setText(BsDate.capitalize(BsDate.weekday(k)) + ", " + draft.day + "." + draft.month + "." + draft.year + ".");
         hour.setText(NarrowSpan.numeric(String.format(java.util.Locale.ROOT, "%02d", draft.hour)));
         minute.setText(NarrowSpan.numeric(String.format(java.util.Locale.ROOT, "%02d", draft.minute)));
+        boolean allDay = draft.allDay;
+        timeSteps.setVisibility(allDay ? INVISIBLE : VISIBLE);
+        allDayNote.setVisibility(allDay ? VISIBLE : GONE);
+        for (int i = 0; i < modeButtons.length; i++) {
+            boolean on = draft.mode() == i;
+            modeButtons[i].setBackgroundDrawable(toggle(c, on));
+            modeButtons[i].setTextColor(on ? p.accentFg : p.fg);
+        }
+        boolean plan = !draft.ring;
+        heading.setText(ba.infotablet.ui.TrackingSpan.of((isNew ? (plan ? "Novi plan" : "Novi podsjetnik")
+                : (plan ? "Uredi plan" : "Uredi podsjetnik")).toUpperCase(java.util.Locale.ROOT), 0.08f));
         for (int i = 0; i < repeatButtons.length; i++) {
             boolean on = draft.repeat == i;
             repeatButtons[i].setBackgroundDrawable(toggle(c, on));
@@ -324,8 +367,10 @@ public final class ReminderEditor extends LinearLayout {
         }
         draft.text = t;
         long now = Clock.now();
-        if (draft.repeat == Reminder.ONCE && Recurrence.occurrence(draft, 0) <= now) {
-            error.setText("Ovo vrijeme je već prošlo");
+        long first = Recurrence.occurrence(draft, 0);
+        boolean past = draft.allDay ? first < ba.infotablet.util.Fmt.startOfDay(now) : first <= now;
+        if (draft.repeat == Reminder.ONCE && past) {
+            error.setText(draft.allDay ? "Ovaj dan je već prošao" : "Ovo vrijeme je već prošlo");
             return;
         }
         long id = ReminderStore.save(getContext(), draft, now);

@@ -19,7 +19,7 @@ public final class ReminderForm {
         this.error = error;
     }
 
-    /** Fields: text, date (yyyy-mm-dd), time (HH:MM), repeat (0 to 4), category. */
+    /** Fields: text, date (yyyy-mm-dd), time (HH:MM, ignored for a whole-day plan), mode (0 to 2), repeat (0 to 4), category. */
     public static ReminderForm parse(Map<String, String> f, long now) {
         Reminder r = new Reminder();
         String text = clean(f.get("text"));
@@ -37,17 +37,29 @@ public final class ReminderForm {
         if (r.repeat < Reminder.ONCE || r.repeat > Reminder.YEARLY || !Reminder.validCategory(r.category)) {
             return new ReminderForm(r, "Neispravan unos.");
         }
+        int mode;
+        try {
+            mode = Integer.parseInt(f.get("mode") == null ? "0" : f.get("mode"));
+        } catch (NumberFormatException e) {
+            mode = -1;
+        }
+        if (mode < Reminder.MODE_RING || mode > Reminder.MODE_ALL_DAY) return new ReminderForm(r, "Neispravan unos.");
         if (!date.matches("\\d{4}-\\d{2}-\\d{2}")) return new ReminderForm(r, "Odaberite datum.");
-        if (!time.matches("\\d{1,2}:\\d{2}(:\\d{2})?")) return new ReminderForm(r, "Odaberite vrijeme.");
+        boolean allDay = mode == Reminder.MODE_ALL_DAY;
+        if (!allDay && !time.matches("\\d{1,2}:\\d{2}(:\\d{2})?")) return new ReminderForm(r, "Odaberite vrijeme.");
         r.year = Integer.parseInt(date.substring(0, 4));
         r.month = Integer.parseInt(date.substring(5, 7));
         r.day = Integer.parseInt(date.substring(8, 10));
-        String[] hm = time.split(":");
-        r.hour = Integer.parseInt(hm[0]);
-        r.minute = Integer.parseInt(hm[1]);
+        if (!allDay) {
+            String[] hm = time.split(":");
+            r.hour = Integer.parseInt(hm[0]);
+            r.minute = Integer.parseInt(hm[1]);
+        }
+        r.setMode(mode);
         if (!Recurrence.validDate(r.year, r.month, r.day, r.hour, r.minute)) return new ReminderForm(r, "Taj datum ne postoji.");
-        if (r.repeat == Reminder.ONCE && Recurrence.occurrence(r, 0) <= now) {
-            return new ReminderForm(r, "Ovo vrijeme je već prošlo.");
+        long first = Recurrence.occurrence(r, 0);
+        if (r.repeat == Reminder.ONCE && (allDay ? first < ba.infotablet.util.Fmt.startOfDay(now) : first <= now)) {
+            return new ReminderForm(r, allDay ? "Ovaj dan je već prošao." : "Ovo vrijeme je već prošlo.");
         }
         return new ReminderForm(r, null);
     }

@@ -38,6 +38,7 @@ public final class Agenda {
 
     /** The occurrence waiting for "Gotovo", or NONE. For repeating reminders only the latest one counts. */
     public static long due(Reminder r, long now) {
+        if (!r.ring) return NONE;   // plans never wait for "Gotovo"
         long occ = Recurrence.firstAfter(r, r.handledUntil);
         if (occ > now) return NONE;
         long last = r.repeat == Reminder.ONCE ? occ : Recurrence.lastAtOrBefore(r, now);
@@ -54,6 +55,8 @@ public final class Agenda {
 
     /** The next occurrence ahead of now that has not been handled yet. */
     public static long next(Reminder r, long now) {
+        if (r.allDay) return Recurrence.firstAfter(r, ba.infotablet.util.Fmt.startOfDay(now) - 1);   // stays up all day
+        if (!r.ring) return Recurrence.firstAfter(r, now);
         return Recurrence.firstAfter(r, Math.max(r.handledUntil, now));
     }
 
@@ -81,6 +84,7 @@ public final class Agenda {
     public static long nextWake(List<Reminder> all, long now) {
         long best = NONE;
         for (Reminder r : all) {
+            if (!r.ring) continue;
             long d = due(r, now);
             if (d != NONE && state(r, d, now) == State.SNOOZED) best = Math.min(best, r.snoozeUntil);
             best = Math.min(best, next(r, now));

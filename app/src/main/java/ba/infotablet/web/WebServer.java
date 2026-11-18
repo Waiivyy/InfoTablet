@@ -133,6 +133,9 @@ public final class WebServer extends NanoHTTPD {
             return html(Pages.list(Agenda.all(ReminderStore.all(ctx), now), now, csrf, msg(f.get("m"))));
         }
         if (m == Method.GET && uri.equals("/new")) return html(Pages.form(Pages.fresh(now), true, null, csrf));
+        if (m == Method.GET && uri.equals("/history")) {
+            return html(Pages.history(ReminderStore.history(ctx, now - ba.infotablet.reminders.History.SHOW_MS), now));
+        }
         if (m == Method.GET && uri.equals("/backup")) {
             try {
                 Response r = newFixedLengthResponse(Response.Status.OK, "application/json; charset=utf-8",

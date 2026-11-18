@@ -113,19 +113,23 @@ public final class RemindersPanel extends LinearLayout {
         boolean sameDay = Fmt.dayOffset(ref, e.at) == 0 || e.state != Agenda.State.UPCOMING;
 
         TextView t;
-        if (sameDay) {
+        if (sameDay && e.r.allDay) {
+            t = Ui.text(c, 12.5f, Fonts.medium(), p.fg2);
+            t.setText(TrackingSpan.of("CIJELI DAN", 0.04f));
+            t.setMaxLines(2);
+        } else if (sameDay) {
             t = Ui.text(c, 19, Fonts.monoMedium(), waiting ? p.alert : snoozed ? p.warn : p.fg);
             t.setText(NarrowSpan.numeric(Fmt.hhmm(snoozed ? e.r.snoozeUntil : e.at)));
         } else {
             t = Ui.text(c, 13, Fonts.medium(), p.fg2);
             t.setText(TrackingSpan.of(shortDay(e.at).toUpperCase(Locale.ROOT), 0.04f));
         }
-        t.setSingleLine(true);
+        if (!(sameDay && e.r.allDay)) t.setSingleLine(true);
         r.addView(t, new LayoutParams(Ui.dp(c, 58), LayoutParams.WRAP_CONTENT));
 
         TextView txt = Ui.text(c, 16, Fonts.regular(), p.fg);
         String label = e.r.text;
-        if (!sameDay) label = Fmt.hhmm(e.at) + " " + label;
+        if (!sameDay && !e.r.allDay) label = Fmt.hhmm(e.at) + " " + label;
         if (e.state == Agenda.State.MISSED) label = label + " · propušteno";
         txt.setText(label);
         txt.setSingleLine(true);
@@ -135,7 +139,7 @@ public final class RemindersPanel extends LinearLayout {
         tl.rightMargin = Ui.dp(c, 10);
         r.addView(txt, tl);
 
-        int icon = waiting ? R.drawable.ic_warning : snoozed ? R.drawable.ic_bell : ReminderText.icon(e.r.category);
+        int icon = waiting ? R.drawable.ic_warning : snoozed ? R.drawable.ic_bell : ReminderText.icon(e.r);
         r.addView(Ui.icon(c, icon, waiting ? p.alert : snoozed ? p.warn : p.fg2, 20));
         return r;
     }

@@ -64,7 +64,8 @@ public final class Backup {
     public static JSONObject toJson(Reminder r) throws JSONException {
         return new JSONObject().put("text", r.text).put("year", r.year).put("month", r.month).put("day", r.day)
                 .put("hour", r.hour).put("minute", r.minute).put("repeat", r.repeat).put("category", r.category)
-                .put("handledUntil", r.handledUntil).put("createdAt", r.createdAt).put("updatedAt", r.updatedAt);
+                .put("handledUntil", r.handledUntil).put("createdAt", r.createdAt).put("updatedAt", r.updatedAt)
+                .put("ring", r.ring).put("allDay", r.allDay);
     }
 
     /** A reminder from the file, or null when a field is missing or out of range. */
@@ -81,6 +82,9 @@ public final class Backup {
         r.handledUntil = o.optLong("handledUntil");
         r.createdAt = o.optLong("createdAt");
         r.updatedAt = o.optLong("updatedAt");
+        r.ring = o.optBoolean("ring", true);   // copies from before plans existed always ring
+        r.allDay = o.optBoolean("allDay", false);
+        if (r.allDay) r.setMode(Reminder.MODE_ALL_DAY);
         boolean ok = !r.text.isEmpty() && r.text.length() <= 200 && r.repeat >= Reminder.ONCE && r.repeat <= Reminder.YEARLY
                 && Reminder.validCategory(r.category)
                 && ba.infotablet.reminders.Recurrence.validDate(r.year, r.month, r.day, r.hour, r.minute);

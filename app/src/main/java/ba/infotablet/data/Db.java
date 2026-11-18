@@ -11,7 +11,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public final class Db extends SQLiteOpenHelper {
 
     private static final String NAME = "infotablet.db";
-    private static final int VERSION = 2;
+    private static final int VERSION = 3;
 
     private static Db instance;
 
@@ -35,6 +35,7 @@ public final class Db extends SQLiteOpenHelper {
                 + "first_fail_at INTEGER NOT NULL DEFAULT 0,"
                 + "error TEXT)");
         createReminders(db);
+        createReminderLog(db);
     }
 
     private static void createReminders(SQLiteDatabase db) {
@@ -50,12 +51,33 @@ public final class Db extends SQLiteOpenHelper {
                 + "snooze_until INTEGER NOT NULL DEFAULT 0,"
                 + "rings INTEGER NOT NULL DEFAULT 0,"
                 + "created_at INTEGER NOT NULL DEFAULT 0,"
-                + "updated_at INTEGER NOT NULL DEFAULT 0)");
+                + "updated_at INTEGER NOT NULL DEFAULT 0,"
+                + "ring INTEGER NOT NULL DEFAULT 1,"
+                + "all_day INTEGER NOT NULL DEFAULT 0)");
+    }
+
+    /** What happened to each ring: done, snoozed or missed (kept 60 days, for the history view). */
+    private static void createReminderLog(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE reminder_log ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "reminder_id INTEGER NOT NULL,"
+                + "due_at INTEGER NOT NULL,"
+                + "text TEXT NOT NULL,"
+                + "category TEXT NOT NULL DEFAULT '',"
+                + "kind TEXT NOT NULL,"
+                + "at INTEGER NOT NULL)");
+        db.execSQL("CREATE INDEX reminder_log_due ON reminder_log (due_at)");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // Each step only adds tables or columns; existing data is always kept.
         if (oldVersion < 2) createReminders(db);
+        if (oldVersion == 2) {
+            // Plans: entries that do not ring, and whole-day entries (version 3).
+            db.execSQL("ALTER TABLE reminders ADD COLUMN ring INTEGER NOT NULL DEFAULT 1");
+            db.execSQL("ALTER TABLE reminders ADD COLUMN all_day INTEGER NOT NULL DEFAULT 0");
+        }
+        if (oldVersion < 3) createReminderLog(db);
     }
 }

@@ -105,12 +105,18 @@ public final class Scheduler {
         return new Summary(ok, total, last);
     }
 
+    private long lastCleanup;
+
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             try {
                 long now = System.currentTimeMillis();
                 HealthLog.maybeWrite(ctx, now);
                 Backup.maybeAuto(ctx, now);
+                if (now - lastCleanup > 86_400_000L || now < lastCleanup) {
+                    lastCleanup = now;
+                    ba.infotablet.reminders.ReminderStore.cleanup(ctx, now);
+                }
                 runDue();
             } catch (RuntimeException e) {
                 // Keep the loop alive; the diary keeps the evidence.
