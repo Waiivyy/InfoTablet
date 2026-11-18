@@ -1,7 +1,10 @@
 package ba.infotablet.data;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Environment;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import ba.infotablet.Settings;
 import ba.infotablet.reminders.Reminder;
@@ -32,7 +36,8 @@ import ba.infotablet.reminders.ReminderStore;
 /**
  * Settings plus reminders as one JSON file, in the "InfoTablet" folder of the tablet's storage
  * (it survives reinstalling the app) or downloaded from the Wi-Fi page. The PIN is never written
- * to the file; after an import the tablet keeps its current PIN.
+ * to the file; after an import the tablet keeps its current PIN. Besides the copies made by hand,
+ * one is written automatically each day when something changed, and the newest seven are kept.
  */
 public final class Backup {
 
@@ -44,7 +49,7 @@ public final class Backup {
 
     public static JSONObject create(Context ctx, long now) throws JSONException {
         JSONObject settings = new JSONObject();
-        for (Map.Entry<String, ?> e : Settings.of(ctx).all().entrySet()) {
+        for (Map.Entry<String, ?> e : new TreeMap<String, Object>(Settings.of(ctx).all()).entrySet()) {
             if (NEVER_EXPORTED.contains(e.getKey())) continue;
             Object v = e.getValue();
             String type = v instanceof Boolean ? "b" : v instanceof Integer ? "i" : v instanceof Long ? "l" : v instanceof String ? "s" : null;
@@ -129,16 +134,87 @@ public final class Backup {
 
     /** Writes a backup file and returns it. */
     public static File export(Context ctx, long now) throws IOException, JSONException {
+        return write(fileName(now), create(ctx, now));
+    }
+
+    private static File write(String name, JSONObject backup) throws IOException, JSONException {
         File dir = folder();
         if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Mapa " + dir + " se ne može napraviti.");
-        File f = new File(dir, fileName(now));
+        File f = new File(dir, name);
         OutputStream out = new FileOutputStream(f);
         try {
-            out.write(create(ctx, now).toString(1).getBytes("UTF-8"));
+            out.write(backup.toString(1).getBytes("UTF-8"));
         } finally {
             out.close();
         }
         return f;
+    }
+
+    // ---- automatic daily copy ----
+
+    private static final String AUTO_SUFFIX = "-auto.json";
+    static final int AUTO_KEEP = 7;
+    private static final long DAY_MS = 86_400_000L;
+
+    static String autoName(long now) {
+        return fileName(now).replace(".json", AUTO_SUFFIX);
+    }
+
+    /**
+     * From the scheduler loop: at most once a day, writes a copy when settings or reminders changed
+     * since the last automatic one, then deletes automatic copies beyond the newest seven. Copies
+     * made by hand are never deleted.
+     */
+    @SuppressLint("ApplySharedPref") // background thread; the time must survive a crash right after
+    public static void maybeAuto(Context ctx, long now) {
+        SharedPreferences sp = ctx.getSharedPreferences("backup", Context.MODE_PRIVATE);
+        long last = sp.getLong("auto_at", 0);
+        if (last != 0 && now >= last && now - last < DAY_MS) return;
+        sp.edit().putLong("auto_at", now).commit();
+        try {
+            JSONObject backup = create(ctx, now);
+            String fingerprint = fingerprint(backup);
+            if (fingerprint.equals(sp.getString("auto_fingerprint", "")) && !list().isEmpty()) return;
+            write(autoName(now), backup);
+            sp.edit().putString("auto_fingerprint", fingerprint).commit();
+            for (String name : autoToDelete(names(list()))) {
+                if (!new File(folder(), name).delete()) Log.w("InfoTablet", "backup: could not delete " + name);
+            }
+        } catch (IOException | JSONException e) {
+            HealthLog.event(ctx, "ERROR", "auto backup " + e);
+        }
+    }
+
+    /** The content without its creation time, so that an unchanged tablet writes no new copy. */
+    static String fingerprint(JSONObject backup) throws JSONException {
+        JSONObject copy = new JSONObject(backup.toString());
+        copy.remove("created");
+        return Integer.toHexString(copy.toString().hashCode()) + ":" + copy.toString().length();
+    }
+
+    /** Automatic copies beyond the newest {@link #AUTO_KEEP}, from names sorted newest first. */
+    static List<String> autoToDelete(List<String> newestFirst) {
+        List<String> out = new ArrayList<String>();
+        int seen = 0;
+        for (String name : newestFirst) {
+            if (name.endsWith(AUTO_SUFFIX) && ++seen > AUTO_KEEP) out.add(name);
+        }
+        return out;
+    }
+
+    private static List<String> names(List<File> files) {
+        List<String> out = new ArrayList<String>();
+        for (File f : files) out.add(f.getName());
+        return out;
+    }
+
+    /** "infotablet-2026-11-18-0300-auto.json" becomes "18.11.2026. u 03:00 · automatska". */
+    public static String label(String name) {
+        String core = name.replace("infotablet-", "").replace(AUTO_SUFFIX, "").replace(".json", "");
+        String[] p = core.split("-");
+        if (p.length != 4 || p[3].length() != 4) return core;
+        String text = p[2] + "." + p[1] + "." + p[0] + ". u " + p[3].substring(0, 2) + ":" + p[3].substring(2);
+        return name.endsWith(AUTO_SUFFIX) ? text + " · automatska" : text;
     }
 
     /** Backup files in the folder, newest first. */

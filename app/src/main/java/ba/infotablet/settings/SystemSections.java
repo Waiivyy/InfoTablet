@@ -118,6 +118,7 @@ final class SystemSections {
         }));
         Sections.add(out, p, Controls.row(c, p, "Rezervna kopija",
                 "Postavke i podsjetnici u mapi " + Backup.FOLDER + " na tabletu (ostaje i ako se aplikacija ponovo instalira). "
+                        + "Tablet sam pravi kopiju svaki dan kad se nešto promijeni i čuva zadnjih sedam. "
                         + "Kopiju možete preuzeti i na telefon sa Wi-Fi stranice. PIN se ne sprema u kopiju.", backupButtons));
         if (lastResult != null) out.addView(Controls.note(c, p, lastResult, lastResult.startsWith("Sačuvano") || lastResult.startsWith("Vraćeno") ? p.ok : p.alert));
 
@@ -144,7 +145,7 @@ final class SystemSections {
                     }
                     s.changed();
                 });
-                Sections.add(out, p, Controls.row(c, p, f.getName().replace("infotablet-", "").replace(".json", ""),
+                Sections.add(out, p, Controls.row(c, p, Backup.label(f.getName()),
                         asking ? "Postavke i podsjetnici na tabletu zamijenit će se ovom kopijom." : null, b));
             }
         }

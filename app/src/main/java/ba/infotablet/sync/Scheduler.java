@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import ba.infotablet.Settings;
+import ba.infotablet.data.Backup;
 import ba.infotablet.data.Cache;
 import ba.infotablet.data.HealthLog;
 import ba.infotablet.data.SourceState;
@@ -107,7 +108,9 @@ public final class Scheduler {
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             try {
-                HealthLog.maybeWrite(ctx, System.currentTimeMillis());
+                long now = System.currentTimeMillis();
+                HealthLog.maybeWrite(ctx, now);
+                Backup.maybeAuto(ctx, now);
                 runDue();
             } catch (RuntimeException e) {
                 // Keep the loop alive; the diary keeps the evidence.
