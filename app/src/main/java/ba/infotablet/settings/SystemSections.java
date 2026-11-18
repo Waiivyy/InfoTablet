@@ -36,6 +36,8 @@ final class SystemSections {
             {"Cijene goriva", "uhvatipopust.ba, podaci sistema eOPC"},
             {"Vijesti", "klix.ba, n1info.ba, radiosarajevo.ba (naslov i kratki uvod, uz izvor)"},
             {"Sport", "Nogometni/Fudbalski savez BiH, nfsbih.ba"},
+            {"Strane lige", "Football data provided by the Football-Data.org API"},
+            {"Bundesliga uživo", "Daten von OpenLigaDB (www.openligadb.de), lizenziert unter ODbL 1.0"},
             {"Kursna lista", "Centralna banka BiH, www.cbbh.ba"},
             {"Voda", "ViK Sarajevo, viksa.ba"},
             {"Struja", "Elektroprivreda BiH, epbih.ba (planirana isključenja)"},

@@ -24,7 +24,14 @@ public final class Http {
 
     /** GET a URL and return the body as text; fails on non-2xx status or a body larger than {@code cap}. */
     public static String get(String url, long cap) throws IOException {
-        Response r = Net.client().newCall(new Request.Builder().url(url).build()).execute();
+        return get(url, cap, null, null);
+    }
+
+    /** As above with one extra request header (for example an API key); the header is never logged. */
+    public static String get(String url, long cap, String header, String value) throws IOException {
+        Request.Builder rb = new Request.Builder().url(url);
+        if (header != null && value != null) rb.header(header, value);
+        Response r = Net.client().newCall(rb.build()).execute();
         try {
             if (!r.isSuccessful()) throw new IOException("HTTP " + r.code() + " " + host(url));
             ResponseBody body = r.body();

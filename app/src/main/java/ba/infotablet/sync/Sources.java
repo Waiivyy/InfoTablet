@@ -6,10 +6,12 @@ import java.util.List;
 
 import ba.infotablet.sources.AirCamsSource;
 import ba.infotablet.sources.AirStationsSource;
+import ba.infotablet.sources.FootballSource;
 import ba.infotablet.sources.FuelSource;
 import ba.infotablet.sources.GasSource;
 import ba.infotablet.sources.HeatSource;
 import ba.infotablet.sources.NewsParser;
+import ba.infotablet.sources.LiveSource;
 import ba.infotablet.sources.NewsSource;
 import ba.infotablet.sources.PowerSource;
 import ba.infotablet.sources.RatesSource;
@@ -35,6 +37,8 @@ public final class Sources {
         list.add(new FuelSource());
         for (NewsParser.Portal p : NewsParser.Portal.values()) list.add(new NewsSource(p));
         list.add(new SportSource());
+        list.add(new LiveSource());
+        list.add(new FootballSource());
         list.add(new RatesSource());
         list.add(new WaterSource());
         list.add(new PowerSource());

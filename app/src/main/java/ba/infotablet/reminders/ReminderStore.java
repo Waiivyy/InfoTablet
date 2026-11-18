@@ -79,8 +79,17 @@ public final class ReminderStore {
         changed(ctx);
     }
 
+    /** Deletes a reminder together with its history. */
     public static void delete(Context ctx, long id) {
-        Db.get(ctx).getWritableDatabase().delete("reminders", "id = ?", new String[] {String.valueOf(id)});
+        SQLiteDatabase db = Db.get(ctx).getWritableDatabase();
+        db.delete("reminders", "id = ?", new String[] {String.valueOf(id)});
+        db.delete("reminder_log", "reminder_id = ?", new String[] {String.valueOf(id)});
+        changed(ctx);
+    }
+
+    /** Before a restore: removes every reminder but keeps the history (its rows carry their own text). */
+    public static void clearForRestore(Context ctx) {
+        Db.get(ctx).getWritableDatabase().delete("reminders", null, null);
         changed(ctx);
     }
 

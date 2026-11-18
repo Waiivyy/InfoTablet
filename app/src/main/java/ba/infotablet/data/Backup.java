@@ -43,7 +43,7 @@ public final class Backup {
 
     public static final String FOLDER = "InfoTablet";
     private static final int FORMAT = 1;
-    private static final List<String> NEVER_EXPORTED = Arrays.asList("pin_hash");
+    private static final List<String> NEVER_EXPORTED = Arrays.asList("pin_hash", "football_key");
 
     private Backup() {}
 
@@ -123,7 +123,7 @@ public final class Backup {
         Settings st = Settings.of(ctx);
         st.reset();
         st.restore(values);
-        for (Reminder r : ReminderStore.all(ctx)) ReminderStore.delete(ctx, r.id);
+        ReminderStore.clearForRestore(ctx);
         for (Reminder r : reminders) ReminderStore.restore(ctx, r);
         return reminders.size();
     }

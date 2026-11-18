@@ -46,7 +46,11 @@ public final class ConfigReceiver extends BroadcastReceiver {
         Settings.of(ctx).putString(key, v.equals("-") ? "" : v);
         Log.i("InfoTablet", "config: " + key + " updated");
         Scheduler s = Scheduler.get(ctx);
-        if (key.equals("sport_club")) s.refreshNow("sport");
+        if (key.equals("sport_club") || key.equals("sport_league")) {
+            s.refreshNow("sport");
+            s.refreshNow("football");
+        }
+        if (key.equals("football_key")) s.refreshNow("football");
         if (key.equals("water_places")) {
             for (String id : new String[] {"water", "power", "heat", "gas"}) s.refreshNow(id);
         }

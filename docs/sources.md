@@ -25,6 +25,8 @@ Verified on 2026-11-16/17 by fetching every source live. This file records what 
 | News | klix.ba, n1info.ba, radiosarajevo.ba | RSS/Atom + article HTML | 30 to 60 min | Works |
 | Sport | nfsbih.ba (BiH football federation) | HTML + tiny JSON | 2 to 3x/day, more on match days | Works |
 | Sport (planned) | API-Football free plan | JSON | n/a | Not usable: free plan excludes the current season |
+| Premier League, Bundesliga, La Liga | football-data.org v4, free plan (key on the device) | JSON | 3 h, 15 min around the followed club's kickoff | Works with a key; scores on the free plan are delayed |
+| Live score (followed foreign club) | OpenLigaDB (Bundesliga), football-data.org (Premier League, La Liga) | JSON | 1 min, only during the match | Works; not checked during a live match yet |
 | Exchange rates | CBBH daily list | JSON | daily after 16:05 | Works |
 | Holidays | Built-in table 2026 to 2030 | static | app updates | Works; religious days are not general days off |
 | Water works | ViK Sarajevo service notices | HTML | 30 to 60 min on working days | Works |
@@ -182,6 +184,22 @@ Server-rendered Joomla HTML, 37 to 70 KB per page. robots.txt allows these pages
 - **Fallback:** TheSportsDB free key `123` (league 4624): only the top 5 table rows and one home-only next/last match, with wrong times seen in 2 of 4 events. Marked as partial.
 - **Verified 17 Nov 2026:** table after round 13 (1. HŠK Zrinjski 34, 2. FK Borac 31, 3. FK Sarajevo 20 ...); next BiH match BiH vs Romania 17.11. 20:45, Zenica.
 
+### Premier League, Bundesliga, La Liga: football-data.org
+
+- **Account:** the free plan needs a key (registration with an email at football-data.org). The key is set on the tablet over adb (`football_key`), never in the code, and is left out of backups. Their terms: one key per application, and "developer credentials may not be stored in code repositories of open source projects".
+- **Calls** (header `X-Auth-Token`): `/v4/competitions/{PL|BL1|PD}/standings` (the `TOTAL` table) and `/v4/competitions/{code}/matches?dateFrom=…&dateTo=…` (3 days back to 6 days ahead), plus `/v4/teams/{id}/matches` (20 days back and ahead, every competition) for the followed club. Seven calls per run, 7 s apart, because the free plan allows 10 calls a minute.
+- **Free plan limits:** "Scores delayed" and "Fixtures Schedules delayed" (the delay is not stated); live scores need the paid "Free w/ Livescores" plan (€12/month). The owner chose the free plan.
+- **Poll:** every 3 hours, every 15 minutes from 30 minutes before the followed club's kickoff to 2.5 hours after.
+- **Credit:** "Football data provided by the Football-Data.org API" (shown under the table and in O aplikaciji).
+
+### Live score of the followed foreign club
+
+- Runs only from 5 minutes before kickoff to 135 minutes after, once a minute.
+- **Bundesliga:** OpenLigaDB `https://api.openligadb.de/getmatchdata/bl1` (current matchday, no key). The club is found by name; the score is the last entry of `goals` (or the final result). Data are entered by volunteers: "Verzögerungen, Lücken und Fehler kommen vor". Their terms allow at most one call every 30 to 60 seconds per league during matches. Licence ODbL 1.0, credit "Daten von OpenLigaDB (www.openligadb.de), lizenziert unter ODbL 1.0". OpenLigaDB's La Liga data were wrong when checked, so it is used for the Bundesliga only.
+- **Premier League, La Liga:** football-data.org `/v4/matches/{id}` (delayed on the free plan; the card says so).
+- **BiH league:** no live source was found; nfsbih.ba is polled every 15 minutes around kickoff as before. Whether its match page updates during a match is still to be checked.
+- Shown on the Sport screen and, while the match is on, in the banner row of Početna (after weather warnings and street notices).
+
 ## Exchange rates: CBBH
 
 - **URL:** `https://www.cbbh.ba/CurrencyExchange/GetJson?date=yyyy-MM-dd` (734 B gzip). XML at `GetXml` (root tag is misspelled `CurrencyExchaneData`; do not validate it).
@@ -288,7 +306,7 @@ Winter equipment is mandatory in BiH from 1 November to 1 April. The app shows a
 - Conscrypt modernises the TLS protocol and ciphers but uses the system trust store, so it does not fix missing roots. The app therefore ships a small bundle of current root certificates and trusts system roots plus the bundle.
 - The development Mac's traffic goes through a TLS-inspecting gateway, so real certificate chains cannot be inspected from it. The definitive check is the on-device HTTPS test against every host below (Phase 3).
 
-Hosts the app contacts: `api.open-meteo.com`, `air-quality-api.open-meteo.com`, `zrak.fhmzbih.gov.ba`, `www.fhmzbih.gov.ba`, `feeds.meteoalarm.org`, `uhvatipopust.ba`, `www.klix.ba`, `n1info.ba`, `radiosarajevo.ba`, `www.nfsbih.ba`, `www.thesportsdb.com` (fallback), `www.cbbh.ba`, `www.viksa.ba`, `bihamk.ba`, `www.epbih.ba`, `www.toplanesarajevo.ba`, `www.sarajevogas.ba`, `api.github.com`, `github.com`, `release-assets.githubusercontent.com`, `vlada.ks.gov.ba`.
+Hosts the app contacts: `api.open-meteo.com`, `air-quality-api.open-meteo.com`, `zrak.fhmzbih.gov.ba`, `www.fhmzbih.gov.ba`, `feeds.meteoalarm.org`, `uhvatipopust.ba`, `www.klix.ba`, `n1info.ba`, `radiosarajevo.ba`, `www.nfsbih.ba`, `www.thesportsdb.com` (fallback), `api.football-data.org`, `api.openligadb.de`, `www.cbbh.ba`, `www.viksa.ba`, `bihamk.ba`, `www.epbih.ba`, `www.toplanesarajevo.ba`, `www.sarajevogas.ba`, `api.github.com`, `github.com`, `release-assets.githubusercontent.com`, `vlada.ks.gov.ba`.
 
 ## Daily request estimate
 

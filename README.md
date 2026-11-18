@@ -1,9 +1,11 @@
 # InfoTablet
 
 A wall-mounted home information display for an old Android tablet, in Bosnian. It replaces the
-tablet's home screen and shows the clock, weather and warnings, air quality, fuel prices, the
-holiday calendar, news, football, exchange rates, water works and road conditions, plus
-reminders with a full-screen alarm.
+tablet's home screen and shows the clock, weather and warnings, air quality, fuel prices, a
+calendar with holidays and plans, news, football (the BiH league and the Premier League,
+Bundesliga and La Liga, with the followed club's live score), exchange rates, water, power,
+heating and gas notices for the home streets, and road conditions, plus reminders with a
+full-screen alarm and a 30-day history.
 
 Built for a Lenovo IdeaTab A3000-H (Android 4.2.2, 1024×600), and it runs on Android 4.2 or newer.
 
@@ -62,9 +64,18 @@ shell may send this broadcast):
 adb shell am broadcast -a ba.infotablet.CONFIG --es key <key> --es value <value>
 ```
 
-Keys: `creator_name`, `creator_link` (shown in O aplikaciji), `sport_club`, `water_places`
-(streets for the water works notices), `city`, `city2`, and `pin`. A value of `-` clears the
-setting (for `pin`: removes a forgotten PIN).
+Keys: `creator_name`, `creator_link` (shown in O aplikaciji), `sport_league` (`bih`, `PL`, `BL1`
+or `PD`) and `sport_club` (also chosen in Postavke, Sadržaj), `football_key` (see below),
+`water_places` (streets for the water, power, heating and gas notices), `city`, `city2`, and `pin`.
+A value of `-` clears the setting (for `pin`: removes a forgotten PIN).
+
+The Premier League, Bundesliga and La Liga come from football-data.org, which needs a free key
+(register at football-data.org). Set it from your own terminal so it never lands in a file or a
+chat; it is not included in backups, so set it again after a reset:
+
+```sh
+adb shell am broadcast -a ba.infotablet.CONFIG --es key football_key --es value <your key>
+```
 
 ## Looking after the tablet
 
@@ -98,8 +109,8 @@ own system menus stay in English, so the steps below use the English names.
 The tablet writes a copy of its settings and reminders to the `InfoTablet` folder on its own
 storage once a day when something changed, and keeps the newest seven. Postavke, Sigurnost i
 podaci has "Napravi kopiju" for a copy by hand (those are never deleted automatically) and "Vrati"
-to restore one. The Wi-Fi page can download a copy to a phone. The PIN is never in a copy; the
-device-only values are, so keep copies off the tablet private and out of this repository:
+to restore one. The Wi-Fi page can download a copy to a phone. The PIN and the football-data key are never in a copy; the other device-only values are, so keep
+copies off the tablet private and out of this repository:
 
 ```sh
 adb pull /sdcard/InfoTablet
@@ -127,7 +138,8 @@ adb pull /sdcard/InfoTablet
 6. Press Home, choose InfoTablet, then "Always".
 7. Restore: `adb push infotablet-<date>.json /sdcard/InfoTablet/`, then Postavke (it asks for a new
    PIN first), Sigurnost i podaci, "Vrati". This brings back the settings, the device-only values
-   and the reminders. Without a backup, set the device-only values over adb instead.
+   (except the football-data key) and the reminders. Without a backup, set the device-only values
+   over adb instead.
 8. Disable the preinstalled apps that run in the background or report to Lenovo: Settings, Apps,
    All, the app, Disable. On this tablet these were Lenovo LSF device, Lenovo registration
    (com.leadertech.powerregister.len2), the Lenovo weather, calendar and memo widgets, Lenovo

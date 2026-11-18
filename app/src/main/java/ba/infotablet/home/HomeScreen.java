@@ -33,6 +33,7 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
     private final WeatherPanel weather;
     private final WarningBanner banner;
     private final NoticeBanner notice;
+    private final LiveBanner live;
     private final UpdateBanner update;
     private final View[] tiles = new View[3];
     private final long fuelStaleMs = new FuelSource().staleAfterMs();
@@ -51,11 +52,14 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         update = new UpdateBanner(c, p);
         notice = new NoticeBanner(c, p);
         if (Settings.of(c).tabVisible(7)) notice.setOnClickListener(v -> tabs.onTab(7));
+        live = new LiveBanner(c, p);
+        if (Settings.of(c).tabVisible(5)) live.setOnClickListener(v -> tabs.onTab(5));
         grid.add(clock, 0, 0, 2, 1);
         grid.add(weather, 2, 0, 1, 1);
         grid.add(banner, 0, 1, 3, 1);
         grid.add(update, 0, 1, 3, 1);
         grid.add(notice, 0, 1, 3, 1);
+        grid.add(live, 0, 1, 3, 1);
 
         Settings s = Settings.of(c);
         String[] chosen = s.tiles();
@@ -93,7 +97,8 @@ public final class HomeScreen extends FrameLayout implements Refreshable {
         weather.bind(Cache.get(c, WeatherSource.ID), weatherStaleMs, Settings.of(c).locationName(), now);
         boolean warning = banner.bind(Cache.get(c, WarningsSource.ID), Cache.get(c, SmogSource.ID), now);
         boolean street = notice.bind(!warning, now);
-        update.bind(!warning && !street);
+        boolean match = live.bind(!warning && !street, now);
+        update.bind(!warning && !street && !match);
         for (View v : tiles) {
             if (v instanceof RemindersPanel) {
                 ((RemindersPanel) v).bind(Agenda.upcoming(ReminderStore.all(c), now, REMINDER_HORIZON_MS), now);

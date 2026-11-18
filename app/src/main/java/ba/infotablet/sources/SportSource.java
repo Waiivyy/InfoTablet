@@ -82,7 +82,8 @@ public final class SportSource extends BaseSource {
         if (last != null) national.put("last", last);
         out.put("national", national);
 
-        String wanted = Settings.of(ctx).sportClub();
+        Settings st = Settings.of(ctx);
+        String wanted = "bih".equals(st.sportLeague()) ? st.sportClub() : "";
         JSONObject row = findClub(table.getJSONArray("rows"), wanted);
         if (row != null) {
             pause();

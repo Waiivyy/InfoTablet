@@ -26,6 +26,7 @@ import ba.infotablet.data.SourceState;
 import ba.infotablet.sources.NewsParser;
 import ba.infotablet.sources.NewsSource;
 import ba.infotablet.sources.RatesSource;
+import ba.infotablet.sources.FootballSource;
 import ba.infotablet.sources.SportSource;
 import ba.infotablet.sources.WaterSource;
 import ba.infotablet.sync.BaseSource;
@@ -84,18 +85,44 @@ final class ContentSections {
         streets(s, st, out);
     }
 
+    private static final String[] LEAGUE_CODES = {"bih", "PL", "BL1", "PD"};
+    private static final String[] LEAGUE_LABELS = {"BiH", "Premier League", "Bundesliga", "La Liga"};
+
+    /** The followed club: first the league (BiH or one of the three foreign ones), then the club from its table. */
     private static void club(final SettingsScreen s, final Settings st, LinearLayout out) {
         Context c = s.getContext();
         Palette p = s.p;
+        final String league = st.sportLeague();
+        int li = 0;
+        for (int i = 0; i < LEAGUE_CODES.length; i++) if (LEAGUE_CODES[i].equals(league)) li = i;
+        Sections.add(out, p, Controls.block(c, p, "Liga kluba",
+                st.footballKey().isEmpty() ? "Strane lige trebaju ključ za football-data.org (podešava se preko adb, vidi README)." : null,
+                Controls.choice(c, p, LEAGUE_LABELS, li, index -> {
+                    st.setSportClub(LEAGUE_CODES[index], "");
+                    Sections.refreshLater(s.getContext(), SportSource.ID, FootballSource.ID);
+                    s.changed();
+                })));
+
         final List<String[]> clubs = new ArrayList<String[]>(); // {teamId, name}
         clubs.add(new String[] {"", "Nijedan"});
-        SourceState state = Cache.get(c, SportSource.ID);
         try {
-            if (state.hasData()) {
-                JSONArray rows = new JSONObject(state.payload).getJSONObject("table").getJSONArray("rows");
-                for (int i = 0; i < rows.length(); i++) {
-                    JSONObject r = rows.getJSONObject(i);
-                    clubs.add(new String[] {String.valueOf(r.optInt("teamId")), r.optString("club")});
+            if ("bih".equals(league)) {
+                SourceState state = Cache.get(c, SportSource.ID);
+                if (state.hasData()) {
+                    JSONArray rows = new JSONObject(state.payload).getJSONObject("table").getJSONArray("rows");
+                    for (int i = 0; i < rows.length(); i++) {
+                        JSONObject r = rows.getJSONObject(i);
+                        clubs.add(new String[] {String.valueOf(r.optInt("teamId")), r.optString("club")});
+                    }
+                }
+            } else {
+                SourceState state = Cache.get(c, FootballSource.ID);
+                if (state.hasData()) {
+                    JSONArray rows = new JSONObject(state.payload).getJSONObject("leagues").getJSONObject(league).getJSONArray("table");
+                    for (int i = 0; i < rows.length(); i++) {
+                        JSONObject r = rows.getJSONObject(i);
+                        clubs.add(new String[] {String.valueOf(r.optInt("teamId")), r.optString("name")});
+                    }
                 }
             }
         } catch (JSONException ignored) {
@@ -106,15 +133,17 @@ final class ContentSections {
             if (clubs.get(i)[0].equals(st.sportClub()) || clubs.get(i)[1].equalsIgnoreCase(st.sportClub())) cur = i;
         }
         final int ci = cur;
-        String desc = clubs.size() == 1 ? "Lista klubova se pojavi kad se učita tabela Premijer lige." : "Klub iz Premijer lige BiH za ekran Sport.";
+        String desc = clubs.size() > 1 ? "Klub za ekran Sport i rezultat uživo."
+                : "bih".equals(league) ? "Lista klubova se pojavi kad se učita tabela Premijer lige BiH."
+                : "Lista klubova se pojavi kad se učita tabela lige.";
         Sections.add(out, p, Controls.row(c, p, "Klub", desc, Controls.stepper(c, p, clubs.get(cur)[1], 170, true,
-                () -> setClub(s, st, clubs.get((ci + clubs.size() - 1) % clubs.size())[0]),
-                () -> setClub(s, st, clubs.get((ci + 1) % clubs.size())[0]))));
+                () -> setClub(s, st, league, clubs.get((ci + clubs.size() - 1) % clubs.size())[0]),
+                () -> setClub(s, st, league, clubs.get((ci + 1) % clubs.size())[0]))));
     }
 
-    private static void setClub(SettingsScreen s, Settings st, String teamId) {
-        st.putString("sport_club", teamId);
-        Sections.refreshLater(s.getContext(), SportSource.ID);
+    private static void setClub(SettingsScreen s, Settings st, String league, String teamId) {
+        st.setSportClub(league, teamId);
+        Sections.refreshLater(s.getContext(), "bih".equals(league) ? SportSource.ID : FootballSource.ID);
         s.changed();
     }
 

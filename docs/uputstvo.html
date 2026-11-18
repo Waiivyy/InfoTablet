@@ -22,8 +22,8 @@
   html, body { margin: 0; background: #fff; color: var(--ink); }
   body {
     font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
-    font-size: 12.3pt;
-    line-height: 1.32;
+    font-size: 11.7pt;
+    line-height: 1.3;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -46,14 +46,14 @@
     font-family: "Roboto Mono", monospace; font-weight: 500; font-size: 9pt;
     letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
   }
-  h1 { font-size: 25pt; font-weight: 500; line-height: 1.1; margin: 1.2mm 0 1.6mm; letter-spacing: -0.01em; }
-  .lead { margin: 0; color: var(--muted); font-size: 12.4pt; }
+  h1 { font-size: 23pt; font-weight: 500; line-height: 1.1; margin: 1.2mm 0 1.6mm; letter-spacing: -0.01em; }
+  .lead { margin: 0; color: var(--muted); font-size: 11.8pt; }
 
   .cols { column-count: 2; column-gap: 9mm; column-fill: balance; }
-  section { break-inside: avoid; margin: 0 0 3.6mm; }
+  section { break-inside: avoid; margin: 0 0 3.2mm; }
   h2 {
     display: flex; align-items: baseline; gap: 2.4mm;
-    font-size: 14.2pt; font-weight: 500; margin: 0 0 1.4mm; line-height: 1.2;
+    font-size: 13.6pt; font-weight: 500; margin: 0 0 1.2mm; line-height: 1.2;
   }
   h2 .n { font-family: "Roboto Mono", monospace; font-weight: 500; font-size: 11pt; color: var(--accent); min-width: 6mm; }
   p { margin: 0 0 1.6mm; }
@@ -95,16 +95,15 @@
   <header>
     <div class="kicker">Tablet na zidu · uputstvo</div>
     <h1>Kako se koristi tablet</h1>
-    <p class="lead">Tablet sam pokazuje sat, prognozu, upozorenja, zrak, cijene goriva, praznike, vijesti,
-      sport i vaše podsjetnike. Sve se samo osvježava. Ne treba ga paliti, gasiti ni podešavati.</p>
+    <p class="lead">Tablet sam pokazuje sat, prognozu, upozorenja, zrak, gorivo, praznike, vijesti, sport,
+      vaše podsjetnike i planove. Sve se samo osvježava. Ne treba ga paliti, gasiti ni podešavati.</p>
   </header>
 
   <div class="cols">
     <section>
       <h2><span class="n">01</span>Kretanje</h2>
-      <p>Dugmad su lijevo: Početna, Vrijeme, Gorivo, Kalendar, Vijesti, Sport, Podsjetnici, Korisno
-        i Postavke. Dodirnite jedno da ga otvorite. Kad neko vrijeme ništa ne dirate, tablet se sam
-        vrati na Početnu.</p>
+      <p>Dugmad su lijevo. Dodirnite jedno da ga otvorite. Kad neko vrijeme ništa ne dirate, tablet
+        se sam vrati na Početnu.</p>
     </section>
 
     <section>
@@ -127,11 +126,19 @@
         <li><span class="nb"><span class="btn">Gotovo</span>:</span> urađeno je, zvono prestaje.</li>
         <li><span class="nb"><span class="btn">Odgodi 10 min</span>:</span> javi se ponovo za deset minuta.</li>
       </ul>
-      <p class="note">Ako niko ne dodirne, javi se još dva puta. Zatim ostane na Početnoj kao propušten.</p>
+      <p class="note">Ako niko ne dodirne, javi se još dva puta, pa ostane na Početnoj kao propušten.
+        Šta je bilo zadnjih 30 dana: <span class="nb"><span class="btn">Historija</span>.</span></p>
     </section>
 
     <section>
-      <h2><span class="n">04</span>Podsjetnici s telefona</h2>
+      <h2><span class="n">04</span>Plan u kalendaru</h2>
+      <p>U <span class="path">Kalendaru</span> dodirnite dan, pa
+        <span class="btn primary">Dodaj plan za ovaj dan</span>. Plan ne zvoni; vidi se na Početnoj
+        i u kalendaru. Ako treba zvono, izaberite <span class="btn">Zvoni</span>.</p>
+    </section>
+
+    <section>
+      <h2><span class="n">05</span>Podsjetnici s telefona</h2>
       <p>Kad je telefon na kućnom Wi-Fi-ju, podsjetnike možete dodavati i s telefona. U pregledniku
         otvorite adresu ispod i upišite PIN.</p>
       <div class="fill"><div><span>Adresa:</span><i></i></div></div>
@@ -140,7 +147,7 @@
     </section>
 
     <section>
-      <h2><span class="n">05</span>Nova verzija</h2>
+      <h2><span class="n">06</span>Nova verzija</h2>
       <p>Kad na Početnoj piše „Nova verzija“, dodirnite <span class="nb"><span class="btn">Instaliraj</span>.</span>
         Otvori se prozor na engleskom: dodirnite <span class="btn en">Install</span> i sačekajte
         minutu. Tablet se sam vrati. Ako ostane prozor s <span class="nb"><span class="btn en">Done</span>,</span> dodirnite ga.
@@ -148,12 +155,14 @@
     </section>
 
     <section>
-      <h2><span class="n">06</span>Šta znači</h2>
+      <h2><span class="n">07</span>Šta znači</h2>
       <ul>
         <li><b>„Nema podataka“</b>: jedan izvor se trenutno ne javlja (nema interneta ili stranica ne
           radi). Tablet pokazuje zadnje što zna i sam pokušava ponovo. Ne trebate ništa raditi.</li>
         <li><b>Traka u boji</b>, npr. <span class="tag">ŽUTO</span>: upozorenje za vjetar, kišu, snijeg,
           vrućinu ili smog. Žuto: budite oprezni. Narandžasto: opasno. Crveno: vrlo opasno.</li>
+        <li><b>„Sutra: Bez struje …“</b>: najavljen prekid struje, vode, grijanja ili plina u vašoj
+          ulici. Više piše u <span class="path">Korisno</span>.</li>
         <li><b>Noću je ekran taman</b> i slabije svijetli. To je namjerno. Dodir ga posvijetli na
           minutu. Ekran se nikad sam ne gasi.</li>
       </ul>

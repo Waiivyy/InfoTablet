@@ -23,7 +23,7 @@ public final class Settings {
     public static final String[] NEWS_CATEGORIES = {"crna", "sport", "ekonomija", "svijet", "kultura", "tech"};
 
     /** Keys that may be set from adb (see ConfigReceiver); personal values never ship in the code. */
-    public static final String[] ADB_KEYS = {"sport_club", "creator_name", "creator_link", "water_places", "city", "city2"};
+    public static final String[] ADB_KEYS = {"sport_club", "sport_league", "football_key", "creator_name", "creator_link", "water_places", "city", "city2"};
 
     /** Keys kept by "Vrati zadane postavke": the PIN and the values set during installation. */
     private static final List<String> KEPT_ON_RESET = Arrays.asList("pin_hash", "creator_name", "creator_link");
@@ -175,6 +175,21 @@ public final class Settings {
 
     public boolean hasStreets() {
         return !streets().trim().isEmpty();
+    }
+
+    /** League of the followed club: "bih" (nfsbih.ba, the default), "PL", "BL1" or "PD" (football-data.org). */
+    public String sportLeague() {
+        String l = prefs.getString("sport_league", "bih");
+        return l.equals("PL") || l.equals("BL1") || l.equals("PD") ? l : "bih";
+    }
+
+    public void setSportClub(String league, String club) {
+        prefs.edit().putString("sport_league", league).putString("sport_club", club).apply();
+    }
+
+    /** football-data.org API key, set over adb only; never exported in backups. */
+    public String footballKey() {
+        return prefs.getString("football_key", "").trim();
     }
 
     /** Currencies shown in Korisno and on the rates tile, in order. */
