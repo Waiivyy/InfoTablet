@@ -13,8 +13,8 @@ import ba.infotablet.sync.BaseSource;
 
 /**
  * The live score of the followed foreign club, only while its match is on: Bundesliga from
- * OpenLigaDB every minute (entered by volunteers, free), Premier League and La Liga from
- * football-data.org every two minutes (the free plan's scores are delayed). Payload: one compact match.
+ * OpenLigaDB (entered by volunteers, free), Premier League and La Liga from football-data.org (the
+ * free plan's scores are delayed), every minute. Payload: one compact match.
  */
 public final class LiveSource extends BaseSource {
 
@@ -49,8 +49,7 @@ public final class LiveSource extends BaseSource {
                     club == null ? "" : club.optString("name"));
             if (m != null) return m.put("source", "openligadb").toString();
         }
-        String body = Http.get("https://api.football-data.org/v4/matches/" + next.optLong("id"), 256 * 1024,
-                "X-Auth-Token", Settings.of(ctx).footballKey());
+        String body = FootballSource.get("matches/" + next.optLong("id"), Settings.of(ctx).footballKey());
         return FootballParser.match(new JSONObject(body)).put("source", "football-data").toString();
     }
 
@@ -59,7 +58,8 @@ public final class LiveSource extends BaseSource {
         Settings s = Settings.of(ctx);
         if (s.footballKey().isEmpty() || "bih".equals(s.sportLeague())) return null;
         JSONObject club = clubOf(ctx);
-        JSONObject next = club == null ? null : club.optJSONObject("next");
+        if (!FootballSource.isFollowed(club, s.sportLeague(), s.sportClub())) return null;   // the club was just changed
+        JSONObject next = club.optJSONObject("next");
         if (next == null) return null;
         long now = System.currentTimeMillis(), k = next.optLong("utc");
         return now >= k - BEFORE && now <= k + AFTER ? next : null;

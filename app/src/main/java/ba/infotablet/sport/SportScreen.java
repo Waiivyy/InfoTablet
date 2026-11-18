@@ -93,7 +93,17 @@ public final class SportScreen extends FrameLayout implements Refreshable {
         JSONObject bihData = parse(bih, bihStaleMs, now), fdData = parse(fd, footballStaleMs, now);
         boolean foreign = !"bih".equals(league);
         JSONObject cl = foreign ? (fdData == null ? null : fdData.optJSONObject("club")) : (bihData == null ? null : bihData.optJSONObject("club"));
-        bindClub(c, cl, foreign, s, liveMatch(live, cl, now), now);
+        JSONObject pending = null;   // a club just chosen in Postavke whose matches are still loading
+        if (foreign && !FootballSource.isFollowed(cl, league, s.sportClub())) {
+            cl = null;
+            try {
+                JSONObject leagues = fdData == null ? null : fdData.optJSONObject("leagues");
+                pending = FootballSource.clubRow(leagues == null ? null : leagues.optJSONObject(league), s.sportClub());
+            } catch (JSONException e) {
+                pending = null;
+            }
+        }
+        bindClub(c, cl, pending, foreign, s, liveMatch(live, cl, now), now);
 
         if ("bih".equals(tab)) {
             JSONObject nat = bihData == null ? null : bihData.optJSONObject("national");
@@ -146,7 +156,12 @@ public final class SportScreen extends FrameLayout implements Refreshable {
 
     // ---- the followed club ----
 
-    private void bindClub(Context c, JSONObject cl, boolean foreign, Settings s, JSONObject live, long now) {
+    private void bindClub(Context c, JSONObject cl, JSONObject pending, boolean foreign, Settings s, JSONObject live, long now) {
+        if (cl == null && pending != null) {
+            club.addView(Ui.label(c, p, pending.optString("name") + " · " + FootballParser.leagueName(s.sportLeague())));
+            club.addView(empty(c, "Učitava se…"), weightRow());
+            return;
+        }
         if (cl == null) {
             club.addView(Ui.label(c, p, "Moj klub"));
             String note = s.sportClub().isEmpty() ? "Klub se bira u Postavkama, Sadržaj"

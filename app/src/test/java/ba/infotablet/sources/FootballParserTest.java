@@ -5,8 +5,10 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class FootballParserTest {
 
@@ -85,5 +87,25 @@ public class FootballParserTest {
         assertEquals(65, FootballSource.clubRow(league, "65").getInt("teamId"));
         assertEquals(57, FootballSource.clubRow(league, "arsenal").getInt("teamId"));
         assertNull(FootballSource.clubRow(league, ""));
+    }
+
+    @Test
+    public void onlyAClubChangeReusesRecentTables() throws Exception {
+        long now = 1_000_000_000_000L;
+        JSONObject club = new JSONObject().put("league", "BL1").put("teamId", 5).put("name", "Bayern");
+        JSONObject cached = new JSONObject().put("leagues", new JSONObject()).put("leaguesAt", now - 600_000L).put("club", club);
+
+        assertTrue(FootballSource.isFollowed(club, "BL1", "5"));
+        assertTrue(FootballSource.isFollowed(club, "BL1", "bayern"));
+        assertFalse(FootballSource.isFollowed(club, "PL", "5"));
+        assertFalse(FootballSource.isFollowed(null, "BL1", "5"));
+
+        assertFalse(FootballSource.reuseLeagues(cached, "BL1", "5", now));    // same club: a normal full refresh
+        assertTrue(FootballSource.reuseLeagues(cached, "BL1", "4", now));     // another club: tables kept
+        assertTrue(FootballSource.reuseLeagues(cached, "PL", "57", now));
+        assertTrue(FootballSource.reuseLeagues(cached, "bih", "409", now));   // back to the BiH league: drop the club
+        assertFalse(FootballSource.reuseLeagues(cached, "BL1", "4", now + FootballSource.REUSE_MS));   // tables too old
+        assertFalse(FootballSource.reuseLeagues(cached.put("leaguesAt", 0), "BL1", "4", now));       // older payload
+        assertFalse(FootballSource.reuseLeagues(null, "BL1", "4", now));
     }
 }
