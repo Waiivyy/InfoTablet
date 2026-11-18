@@ -66,6 +66,90 @@ Keys: `creator_name`, `creator_link` (shown in O aplikaciji), `sport_club`, `wat
 (streets for the water works notices), `city`, `city2`, and `pin`. A value of `-` clears the
 setting (for `pin`: removes a forgotten PIN).
 
+## Looking after the tablet
+
+A one-page guide in Bosnian for the people who live with the tablet is in
+[docs/uputstvo.html](docs/uputstvo.html) (print it on A4, or use the PDF next to it). The tablet's
+own system menus stay in English, so the steps below use the English names.
+
+### Updating
+
+- **Normal way.** Publish a release (see above). The tablet picks it up within a month, sooner if
+  a source has been failing for two days. To fetch it at once: Postavke, Ažuriranja,
+  "Provjeri ažuriranje". When it is ready, "Instaliraj" appears on Početna and in Postavke.
+  Android then asks in English: Install. The app reopens by itself; settings and reminders stay.
+- **Over USB.** `adb install -r InfoTablet-1.2.3.apk`. This only works with an APK signed with
+  the release key. Never uninstall to get past a signature error unless you have a fresh backup:
+  uninstalling deletes the reminders.
+
+### Changing settings
+
+- **On the tablet:** Postavke, behind the PIN. It locks again when you leave it or after two
+  minutes without a touch.
+- **From a phone on the home Wi-Fi:** the Wi-Fi page (reminders and a backup download). Its address
+  and a QR code are in Postavke, Wi-Fi stranica. The address comes from the router, so reserve the
+  tablet's IP address in the router's DHCP settings to keep a phone bookmark working.
+- **Device-only values** (creator, club, streets, PIN): over adb, see the next section.
+- **Forgotten PIN:** clear it over adb with `--es key pin --es value -`, then open Postavke and set
+  a new one.
+
+### Backups
+
+The tablet writes a copy of its settings and reminders to the `InfoTablet` folder on its own
+storage once a day when something changed, and keeps the newest seven. Postavke, Sigurnost i
+podaci has "Napravi kopiju" for a copy by hand (those are never deleted automatically) and "Vrati"
+to restore one. The Wi-Fi page can download a copy to a phone. The PIN is never in a copy; the
+device-only values are, so keep copies off the tablet private and out of this repository:
+
+```sh
+adb pull /sdcard/InfoTablet
+```
+
+### Recovering after a factory reset
+
+1. Before the reset, if the tablet still works, copy the backups off it (above). A reset may wipe
+   the tablet's storage too.
+2. Android setup: connect to Wi-Fi, skip the Google account, automatic date and time, time zone
+   Europe/Sarajevo.
+3. Settings, About tablet: tap "Build number" seven times. In Developer options, turn on USB
+   debugging. Then, with the tablet connected:
+
+   ```sh
+   adb shell settings put global stay_on_while_plugged_in 3   # screen stays on while charging
+   adb shell settings put system screen_off_timeout 1800000   # 30 minutes on battery
+   adb shell settings put secure screensaver_enabled 0        # no Daydream
+   adb shell settings put global install_non_market_apps 1    # Unknown sources, for updates
+   adb shell settings put global package_verifier_enable 0    # no Google "Verify apps" prompt
+   ```
+
+4. Settings, Security, Screen lock: None (otherwise a lock screen appears after every restart).
+5. Install the newest APK from this repository's Releases: `adb install InfoTablet-x.y.z.apk`.
+6. Press Home, choose InfoTablet, then "Always".
+7. Restore: `adb push infotablet-<date>.json /sdcard/InfoTablet/`, then Postavke (it asks for a new
+   PIN first), Sigurnost i podaci, "Vrati". This brings back the settings, the device-only values
+   and the reminders. Without a backup, set the device-only values over adb instead.
+8. Disable the preinstalled apps that run in the background or report to Lenovo: Settings, Apps,
+   All, the app, Disable. On this tablet these were Lenovo LSF device, Lenovo registration
+   (com.leadertech.powerregister.len2), the Lenovo weather, calendar and memo widgets, Lenovo
+   Power Saving and Google Search. Where the button says Uninstall instead, leave the app alone.
+9. Restart the tablet and check that InfoTablet opens by itself with no lock screen.
+
+### Signing key
+
+Release builds are signed with a key kept outside this repository (`local.properties` points to
+it). Back up both the key file and the properties file with its password, in two places (for
+example a password manager and an encrypted USB stick). Without the key, no update can be
+installed over the app on the tablet; it would have to be uninstalled first, which deletes the
+reminders unless they are restored from a backup.
+
+### Hardware
+
+- Keep the tablet on its wall charger. On battery the screen turns off after 30 minutes and
+  reminders can go unseen.
+- The battery sits at 100 % all the time, and a lithium battery kept full for years can swell.
+  Look at the back every few months; if it bulges or the case lifts, unplug the tablet and replace
+  the battery. A cool spot away from radiators helps (the 20-hour test ran at 23 to 28 °C).
+
 ## Health diary
 
 Every 15 minutes the app writes one line to `InfoTablet/log/health-<date>.tsv` on the tablet's
