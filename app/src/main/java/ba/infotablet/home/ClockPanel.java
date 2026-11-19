@@ -47,7 +47,7 @@ public final class ClockPanel extends LinearLayout {
         seconds = settings.clockSeconds();
         // The time, with the 12-hour clock's half of the day in the free top-right corner.
         android.widget.FrameLayout timeBox = new android.widget.FrameLayout(c);
-        time = Ui.text(c, 150, Fonts.monoLight(), p.fg);
+        time = Ui.text(c, Ui.hugeText() ? 132 : 150, Fonts.monoLight(), p.fg);   // room for the larger date
         time.setSingleLine(true);
         time.setGravity(Gravity.START);
         timeBox.addView(time, new android.widget.FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -65,7 +65,7 @@ public final class ClockPanel extends LinearLayout {
         date = Ui.text(c, 28, Fonts.regular(), p.fg);
         date.setSingleLine(true);
         LayoutParams dl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        dl.topMargin = Ui.dp(c, 14);
+        dl.topMargin = Ui.dp(c, Ui.hugeText() ? 6 : 14);
         addView(date, dl);
 
         View spacer = new View(c);
@@ -146,9 +146,13 @@ public final class ClockPanel extends LinearLayout {
                 android.text.SpannableStringBuilder b = new android.text.SpannableStringBuilder(h.name);
                 b.setSpan(new FontSpan(Fonts.medium()), 0, b.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 b.setSpan(new android.text.style.ForegroundColorSpan(p.fg), 0, b.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                b.append(" · ").append(BsDate.weekday(hc)).append(", ").append(String.valueOf(hc.get(Calendar.DAY_OF_MONTH))).append(". ").append(BsDate.month(hc))
-                        .append(" · ").append(h.state ? "neradni dan " : "vjerski praznik ")
-                        .append(Holidays.countdown(Holidays.daysUntil(now.getTimeInMillis(), h.date)));
+                String countdown = Holidays.countdown(Holidays.daysUntil(now.getTimeInMillis(), h.date));
+                if (Ui.hugeText()) {
+                    b.append(" · ").append(countdown);   // the short form fits the larger text
+                } else {
+                    b.append(" · ").append(BsDate.weekday(hc)).append(", ").append(String.valueOf(hc.get(Calendar.DAY_OF_MONTH))).append(". ").append(BsDate.month(hc))
+                            .append(" · ").append(h.state ? "neradni dan " : "vjerski praznik ").append(countdown);
+                }
                 nextText.setText(b);
                 nextRow.setVisibility(VISIBLE);
             }

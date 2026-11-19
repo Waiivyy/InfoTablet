@@ -48,6 +48,7 @@ public final class Rail extends LinearLayout {
             tab.addView(icon, new LayoutParams(Ui.dp(c, 24), Ui.dp(c, 24)));
 
             TextView label = Ui.text(c, 12, Fonts.medium(), p.fg2);
+            Ui.capSize(label, 12, 1.1f);   // the rail is narrow: "Podsjetnici" must still fit
             label.setText(LABELS[i]);
             label.setSingleLine(true);
             LayoutParams ll = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);

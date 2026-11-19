@@ -25,7 +25,7 @@ Verified on 2026-11-16/17 by fetching every source live. This file records what 
 | News | klix.ba, n1info.ba, radiosarajevo.ba | RSS/Atom + article HTML | 30 to 60 min | Works |
 | Sport | nfsbih.ba (BiH football federation) | HTML + tiny JSON | 2 to 3x/day, more on match days | Works |
 | Sport (planned) | API-Football free plan | JSON | n/a | Not usable: free plan excludes the current season |
-| Premier League, Bundesliga, La Liga | football-data.org v4, free plan (key on the device) | JSON | 3 h, 15 min around the followed club's kickoff | Works with a key; scores on the free plan are delayed |
+| Premier League, Bundesliga, La Liga | football-data.org v4, free plan (key on the device) | JSON | 3 h, 15 min around the followed club's kickoff | Works (checked on the tablet 19 Nov 2026); scores on the free plan are delayed |
 | Live score (followed foreign club) | OpenLigaDB (Bundesliga), football-data.org (Premier League, La Liga) | JSON | 1 min, only during the match | Works; not checked during a live match yet |
 | Exchange rates | CBBH daily list | JSON | daily after 16:05 | Works |
 | Holidays | Built-in table 2026 to 2030 | static | app updates | Works; religious days are not general days off |
@@ -187,9 +187,9 @@ Server-rendered Joomla HTML, 37 to 70 KB per page. robots.txt allows these pages
 ### Premier League, Bundesliga, La Liga: football-data.org
 
 - **Account:** the free plan needs a key (registration with an email at football-data.org). The key is set on the tablet over adb (`football_key`), never in the code, and is left out of backups. Their terms: one key per application, and "developer credentials may not be stored in code repositories of open source projects".
-- **Calls** (header `X-Auth-Token`): `/v4/competitions/{PL|BL1|PD}/standings` (the `TOTAL` table) and `/v4/competitions/{code}/matches?dateFrom=…&dateTo=…` (3 days back to 6 days ahead), plus `/v4/teams/{id}/matches` (20 days back and ahead, every competition) for the followed club. Seven calls per run, 7 s apart, because the free plan allows 10 calls a minute.
+- **Calls** (header `X-Auth-Token`): `/v4/competitions/{PL|BL1|PD}/standings` (the `TOTAL` table) and `/v4/competitions/{code}/matches?dateFrom=…&dateTo=…` (3 days back to 6 days ahead), plus `/v4/teams/{id}/matches` (20 days back and ahead, every competition) for the followed club. Seven calls per run. Every call to football-data.org, the live score's too, waits until 7 s after the one before, because the free plan allows 10 calls a minute.
 - **Free plan limits:** "Scores delayed" and "Fixtures Schedules delayed" (the delay is not stated); live scores need the paid "Free w/ Livescores" plan (€12/month). The owner chose the free plan.
-- **Poll:** every 3 hours, every 15 minutes from 30 minutes before the followed club's kickoff to 2.5 hours after.
+- **Poll:** every 3 hours, every 15 minutes from 30 minutes before the followed club's kickoff to 2.5 hours after. When only the followed club changes (in Postavke) and the tables are less than 2 hours old, the run keeps them and fetches just the club's matches: one call, so the new club shows within seconds.
 - **Credit:** "Football data provided by the Football-Data.org API" (shown under the table and in O aplikaciji).
 
 ### Live score of the followed foreign club

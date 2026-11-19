@@ -62,7 +62,7 @@ public final class WeatherPanel extends LinearLayout {
             head.addView(Ui.label(c, p, title), new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
             if (tomorrow) {
                 head.addView(Ui.label(c, p, "sada " + Fmt.temp(cur.getDouble("t"))));
-            } else if (day.has("sunrise") && day.has("sunset")) {
+            } else if (day.has("sunrise") && day.has("sunset") && !Ui.hugeText()) {   // on Vrijeme with large text
                 head.addView(sun(c, R.drawable.ic_sunrise, Fmt.hhmm(day.getLong("sunrise"))));
                 View gap = new View(c);
                 head.addView(gap, new LayoutParams(Ui.dp(c, 8), 1));
@@ -120,12 +120,15 @@ public final class WeatherPanel extends LinearLayout {
                 thirdValue = String.valueOf(Math.round(cur.optDouble("wind", 0)));
                 thirdUnit = " km/h";
             }
-            addView(cells(c,
-                    new String[] {"Min / maks", "Kiša", third},
-                    new CharSequence[] {
-                            value(c, Fmt.temp(day.optDouble("tmin")) + "/" + Fmt.temp(day.optDouble("tmax")), ""),
-                            value(c, String.valueOf(day.optInt("pop", 0)), "%"),
-                            value(c, thirdValue, thirdUnit)}));
+            String minMaxLabel = Ui.largerText() ? "Min/maks" : "Min / maks";   // fits the narrower cell with larger text
+            CharSequence minMax = value(c, Fmt.temp(day.optDouble("tmin")) + "/" + Fmt.temp(day.optDouble("tmax")), "");
+            CharSequence rain = value(c, String.valueOf(day.optInt("pop", 0)), "%");
+            if (Ui.hugeText()) {   // two wider cells; wind and amounts stay on Vrijeme
+                addView(cells(c, new String[] {minMaxLabel, "Kiša"}, new CharSequence[] {minMax, rain}));
+            } else {
+                addView(cells(c, new String[] {minMaxLabel, "Kiša", third},
+                        new CharSequence[] {minMax, rain, value(c, thirdValue, thirdUnit)}));
+            }
 
             if (f.stale) {
                 for (int i = 0; i < getChildCount(); i++) {

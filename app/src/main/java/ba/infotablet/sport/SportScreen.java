@@ -21,6 +21,7 @@ import ba.infotablet.sources.FootballParser;
 import ba.infotablet.sources.FootballSource;
 import ba.infotablet.sources.LiveSource;
 import ba.infotablet.sources.SportSource;
+import ba.infotablet.ui.FitColumn;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Freshness;
 import ba.infotablet.ui.NarrowSpan;
@@ -69,8 +70,7 @@ public final class SportScreen extends FrameLayout implements Refreshable {
     }
 
     private LinearLayout panel(Context c) {
-        LinearLayout l = new LinearLayout(c);
-        l.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout l = new FitColumn(c);   // with large text, rows that do not fit are left out
         l.setBackgroundDrawable(Ui.panel(c, p));
         l.setPadding(Ui.dp(c, 16), Ui.dp(c, 13), Ui.dp(c, 16), Ui.dp(c, 12));
         return l;
@@ -233,7 +233,7 @@ public final class SportScreen extends FrameLayout implements Refreshable {
             LinearLayout r = new LinearLayout(c);
             r.setGravity(Gravity.CENTER_VERTICAL);
             r.setPadding(0, Ui.dp(c, 8), 0, 0);
-            r.addView(Ui.label(c, p, "Zadnja"), new LinearLayout.LayoutParams(Ui.dp(c, 64), LinearLayout.LayoutParams.WRAP_CONTENT));
+            r.addView(Ui.label(c, p, "Zadnja"), new LinearLayout.LayoutParams(Ui.dpText(c, 64), LinearLayout.LayoutParams.WRAP_CONTENT));
             String sc = last.has("hs") ? score(last.optInt("hs"), last.optInt("as")) : last.has("ft") ? last.optString("ft") : last.optString("score");
             long when = last.has("utc") ? last.optLong("utc") : last.has("kickoff") ? last.optLong("kickoff") : last.optLong("date");
             TextView t = Ui.text(c, 16, Fonts.regular(), p.fg);
@@ -358,6 +358,7 @@ public final class SportScreen extends FrameLayout implements Refreshable {
             final String code = TABS[i];
             boolean on = code.equals(tab);
             TextView b = Ui.text(c, 13.5f, Fonts.medium(), on ? p.accentFg : p.fg);
+            Ui.capSize(b, 13.5f, 1.25f);   // four tabs share a narrow card
             b.setText(TAB_LABELS[i]);
             b.setGravity(Gravity.CENTER);
             b.setSingleLine(true);
@@ -461,7 +462,7 @@ public final class SportScreen extends FrameLayout implements Refreshable {
         line.setPadding(Ui.dp(c, 4), 0, Ui.dp(c, 4), 0);
         TextView pos = Ui.text(c, 14, Fonts.mono(), p.fg3);
         pos.setText(String.valueOf(position));
-        line.addView(pos, new LinearLayout.LayoutParams(Ui.dp(c, 22), LinearLayout.LayoutParams.WRAP_CONTENT));
+        line.addView(pos, new LinearLayout.LayoutParams(Ui.dpText(c, 22), LinearLayout.LayoutParams.WRAP_CONTENT));
         TextView name = Ui.text(c, 15, mine ? Fonts.medium() : Fonts.regular(), mine ? p.accent : p.fg);
         name.setText(club);
         name.setSingleLine(true);
@@ -486,7 +487,7 @@ public final class SportScreen extends FrameLayout implements Refreshable {
         TextView t = header ? Ui.label(c, p, text) : Ui.text(c, 14, Fonts.mono(), p.fg2);
         if (!header) t.setText(text);
         t.setGravity(gravity | Gravity.CENTER_VERTICAL);
-        if (widthDp > 0) t.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(c, widthDp), LinearLayout.LayoutParams.WRAP_CONTENT));
+        if (widthDp > 0) t.setLayoutParams(new LinearLayout.LayoutParams(Ui.dpText(c, widthDp), LinearLayout.LayoutParams.WRAP_CONTENT));
         return t;
     }
 

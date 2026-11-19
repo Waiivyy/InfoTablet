@@ -30,6 +30,7 @@ import ba.infotablet.sources.PowerSource;
 import ba.infotablet.sources.StreetNotices;
 import ba.infotablet.sources.WaterParser;
 import ba.infotablet.sources.WaterSource;
+import ba.infotablet.ui.FitColumn;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Freshness;
 import ba.infotablet.ui.NarrowSpan;
@@ -73,8 +74,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
     }
 
     private LinearLayout panel(Context c) {
-        LinearLayout l = new LinearLayout(c);
-        l.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout l = new FitColumn(c);   // with large text, rows that do not fit are left out
         l.setBackgroundDrawable(Ui.panel(c, p));
         l.setPadding(Ui.dp(c, 16), Ui.dp(c, 13), Ui.dp(c, 16), Ui.dp(c, 12));
         return l;
@@ -96,8 +96,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
         rates.removeAllViews();
         rates.addView(Ui.label(c, p, "Kursna lista · KM"));
         Freshness f = Freshness.of(st, staleMs, now);
-        LinearLayout list = new LinearLayout(c);
-        list.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout list = new FitColumn(c);
         list.addView(rateRow(c, "EUR", "euro, fiksni kurs", "1,95583"));
         JSONObject data = null;
         try {
@@ -139,7 +138,13 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
         TextView v = Ui.text(c, 20, Fonts.mono(), p.fg);
         v.setText(NarrowSpan.numeric(value));
         r.addView(v);
-        r.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        if (Ui.hugeText()) {   // natural height; FitColumn leaves out the currencies that do not fit
+            LinearLayout.LayoutParams l = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            l.topMargin = Ui.dp(c, 6);
+            r.setLayoutParams(l);
+        } else {
+            r.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        }
         return r;
     }
 
@@ -155,7 +160,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
 
     private void bindWater(Context c, long now) {
         water.removeAllViews();
-        water.addView(Ui.label(c, p, "Voda · struja · grijanje · plin"));
+        water.addView(Ui.label(c, p, Ui.hugeText() ? "Komunalne obavijesti" : "Voda · struja · grijanje · plin"));
         String places = Settings.of(c).streets();
         if (places.trim().isEmpty()) {
             water.addView(center(c, "Ulice nisu podešene"), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -274,8 +279,7 @@ public final class UsefulScreen extends FrameLayout implements Refreshable {
             roads.addView(center(c, f.note), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
             return;
         }
-        LinearLayout list = new LinearLayout(c);
-        list.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout list = new FitColumn(c);
         list.setPadding(0, Ui.dp(c, 6), 0, 0);
         String places = Settings.of(c).getString("water_places");
         int borderIssues = 0, roadItems = 0;

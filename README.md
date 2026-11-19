@@ -5,7 +5,8 @@ tablet's home screen and shows the clock, weather and warnings, air quality, fue
 calendar with holidays and plans, news, football (the BiH league and the Premier League,
 Bundesliga and La Liga, with the followed club's live score), exchange rates, water, power,
 heating and gas notices for the home streets, and road conditions, plus reminders with a
-full-screen alarm and a 30-day history.
+full-screen alarm and a 30-day history. Three text sizes; with the largest, cards show fewer rows
+rather than cutting any off.
 
 Built for a Lenovo IdeaTab A3000-H (Android 4.2.2, 1024×600), and it runs on Android 4.2 or newer.
 

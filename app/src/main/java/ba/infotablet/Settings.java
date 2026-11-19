@@ -78,8 +78,13 @@ public final class Settings {
         return prefs.getString("accent", "kobalt");
     }
 
-    public boolean largeText() {
-        return prefs.getBoolean("large_text", false);
+    /** Text size: 0 normal, 1 "Veća", 2 "Najveća". */
+    public int textSize() {
+        return prefs.getBoolean("huge_text", false) ? 2 : prefs.getBoolean("large_text", false) ? 1 : 0;
+    }
+
+    public void setTextSize(int size) {
+        prefs.edit().putBoolean("large_text", size == 1).putBoolean("huge_text", size == 2).apply();
     }
 
     public boolean compact() {

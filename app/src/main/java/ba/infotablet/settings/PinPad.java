@@ -33,61 +33,67 @@ public final class PinPad extends LinearLayout {
         this.listener = listener;
         setOrientation(VERTICAL);
         setGravity(Gravity.CENTER_HORIZONTAL);
+        Ui.capBegin(1.1f);   // fixed-size keys: the pad must fit with every text size
+        try {
 
-        title = Ui.text(c, 22, Fonts.medium(), p.fg);
-        title.setGravity(Gravity.CENTER);
-        addView(title);
-        hint = Ui.text(c, 15, Fonts.regular(), p.fg2);
-        hint.setGravity(Gravity.CENTER);
-        LayoutParams hl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-        hl.topMargin = Ui.dp(c, 6);
-        addView(hint, hl);
-        dots = new LinearLayout(c);
-        dots.setGravity(Gravity.CENTER);
-        LayoutParams dl = new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 22));
-        dl.topMargin = Ui.dp(c, 16);
-        addView(dots, dl);
-        message = Ui.text(c, 14.5f, Fonts.medium(), p.alert);
-        message.setGravity(Gravity.CENTER);
-        message.setSingleLine(true);
-        LayoutParams ml = new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 22));
-        ml.topMargin = Ui.dp(c, 8);
-        addView(message, ml);
+            title = Ui.text(c, 22, Fonts.medium(), p.fg);
+            title.setGravity(Gravity.CENTER);
+            addView(title);
+            hint = Ui.text(c, 15, Fonts.regular(), p.fg2);
+            hint.setGravity(Gravity.CENTER);
+            LayoutParams hl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            hl.topMargin = Ui.dp(c, 6);
+            addView(hint, hl);
+            dots = new LinearLayout(c);
+            dots.setGravity(Gravity.CENTER);
+            LayoutParams dl = new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 22));
+            dl.topMargin = Ui.dp(c, 16);
+            addView(dots, dl);
+            message = Ui.text(c, 14.5f, Fonts.medium(), p.alert);
+            message.setGravity(Gravity.CENTER);
+            message.setSingleLine(true);
+            LayoutParams ml = new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 22));
+            ml.topMargin = Ui.dp(c, 8);
+            addView(message, ml);
 
-        String[] keys = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok"};
-        for (int row = 0; row < 4; row++) {
-            LinearLayout r = new LinearLayout(c);
-            for (int col = 0; col < 3; col++) {
-                final String k = keys[row * 3 + col];
-                View b;
-                if (k.equals("del")) {
-                    LinearLayout wrap = new LinearLayout(c);
-                    wrap.setGravity(Gravity.CENTER);
-                    wrap.setBackgroundDrawable(Ui.buttonBackground(c, p, false));
-                    wrap.setClickable(true);
-                    wrap.addView(Ui.icon(c, R.drawable.ic_backspace, p.fg, 26));
-                    wrap.setContentDescription("Obriši");
-                    wrap.setOnClickListener(v -> delete());
-                    b = wrap;
-                } else if (k.equals("ok")) {
-                    TextView t = Ui.button(c, p, "U redu", true, 19);
-                    t.setOnClickListener(v -> submit());
-                    b = t;
-                } else {
-                    TextView t = Ui.button(c, p, k, false, 26);
-                    t.setTypeface(Fonts.mono());
-                    t.setOnClickListener(v -> type(k));
-                    b = t;
+            String[] keys = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok"};
+            for (int row = 0; row < 4; row++) {
+                LinearLayout r = new LinearLayout(c);
+                r.setBaselineAligned(false);   // "U redu" is smaller than the digits; keep the keys level
+                for (int col = 0; col < 3; col++) {
+                    final String k = keys[row * 3 + col];
+                    View b;
+                    if (k.equals("del")) {
+                        LinearLayout wrap = new LinearLayout(c);
+                        wrap.setGravity(Gravity.CENTER);
+                        wrap.setBackgroundDrawable(Ui.buttonBackground(c, p, false));
+                        wrap.setClickable(true);
+                        wrap.addView(Ui.icon(c, R.drawable.ic_backspace, p.fg, 26));
+                        wrap.setContentDescription("Obriši");
+                        wrap.setOnClickListener(v -> delete());
+                        b = wrap;
+                    } else if (k.equals("ok")) {
+                        TextView t = Ui.button(c, p, "U redu", true, 19);
+                        t.setOnClickListener(v -> submit());
+                        b = t;
+                    } else {
+                        TextView t = Ui.button(c, p, k, false, 26);
+                        t.setTypeface(Fonts.mono());
+                        t.setOnClickListener(v -> type(k));
+                        b = t;
+                    }
+                    LayoutParams bl = new LayoutParams(Ui.dp(c, 104), Ui.dp(c, 62));
+                    if (col > 0) bl.leftMargin = Ui.dp(c, 10);
+                    r.addView(b, bl);
                 }
-                LayoutParams bl = new LayoutParams(Ui.dp(c, 104), Ui.dp(c, 62));
-                if (col > 0) bl.leftMargin = Ui.dp(c, 10);
-                r.addView(b, bl);
+                LayoutParams rl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                rl.topMargin = Ui.dp(c, 10);
+                addView(r, rl);
             }
-            LayoutParams rl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-            rl.topMargin = Ui.dp(c, 10);
-            addView(r, rl);
+            renderDots();
+        } finally {
+            Ui.capEnd();
         }
-        renderDots();
     }
 
     public void setTitle(String s) {

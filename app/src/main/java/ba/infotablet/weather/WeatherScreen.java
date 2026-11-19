@@ -27,6 +27,7 @@ import ba.infotablet.sources.WarningsSource;
 import ba.infotablet.sources.WeatherSource;
 import ba.infotablet.ui.AirLevel;
 import ba.infotablet.ui.FontSpan;
+import ba.infotablet.ui.FitColumn;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Freshness;
 import ba.infotablet.ui.NarrowSpan;
@@ -67,8 +68,7 @@ public final class WeatherScreen extends FrameLayout implements Refreshable {
     }
 
     private LinearLayout panel(Context c) {
-        LinearLayout l = new LinearLayout(c);
-        l.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout l = new FitColumn(c);   // with large text, rows that do not fit are left out
         l.setBackgroundDrawable(Ui.panel(c, p));
         l.setPadding(Ui.dp(c, 16), Ui.dp(c, 13), Ui.dp(c, 16), Ui.dp(c, 12));
         return l;
@@ -146,12 +146,13 @@ public final class WeatherScreen extends FrameLayout implements Refreshable {
         LinearLayout strip = hrow(c);
         try {
             JSONArray hs = new JSONObject(st.payload).getJSONArray("hourly");
-            int shown = 0;
-            for (int i = 0; i < hs.length() && shown < 12; i++) {
+            int step = Ui.hugeText() ? 2 : 1;   // with large text: six wider cells, every second hour
+            int seen = 0;
+            for (int i = 0; i < hs.length() && seen < 12; i++) {
                 JSONObject h = hs.getJSONObject(i);
                 if (h.getLong("time") < now - 30 * 60_000L) continue;
+                if (seen++ % step != 0) continue;
                 strip.addView(hourCell(c, h), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
-                shown++;
             }
         } catch (JSONException e) {
             hourly.addView(empty(c, "Nema podataka"));
@@ -172,18 +173,21 @@ public final class WeatherScreen extends FrameLayout implements Refreshable {
         cell.addView(time);
         View icon = Ui.icon(c, Wmo.icon(h.optInt("code"), h.optInt("isDay", 1) == 1), p.fg, 26);
         LinearLayout.LayoutParams il = new LinearLayout.LayoutParams(Ui.dp(c, 26), Ui.dp(c, 26));
-        il.topMargin = Ui.dp(c, 7);
+        boolean huge = Ui.hugeText();
+        int gap = Ui.largerText() ? 4 : 7;   // larger text: tighter, so the rain chance still fits under the temperature
+        il.topMargin = Ui.dp(c, gap);
         cell.addView(icon, il);
         TextView t = Ui.text(c, 19, Fonts.mono(), p.fg);
         t.setText(NarrowSpan.numeric(h.has("t") ? Fmt.temp(h.getDouble("t")) : "-"));
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        tl.topMargin = Ui.dp(c, 7);
+        tl.topMargin = Ui.dp(c, gap);
         cell.addView(t, tl);
+        if (huge) return cell;   // the chance of rain is in the 7-day list below
         int pop = h.optInt("pop", 0);
         TextView pr = Ui.text(c, 12, Fonts.mono(), pop >= 50 ? p.accent : p.fg2);
         pr.setText(pop + "%");
         LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        pl.topMargin = Ui.dp(c, 5);
+        pl.topMargin = Ui.dp(c, Ui.largerText() ? 3 : 5);
         cell.addView(pr, pl);
         return cell;
     }
@@ -315,8 +319,12 @@ public final class WeatherScreen extends FrameLayout implements Refreshable {
         air.addView(block);
         if (fs.stale && fs.hasData) air.addView(warnNote(c, fs.note));
 
-        air.addView(Ui.hairline(c, p.soft), divider(c));
-        air.addView(Ui.label(c, p, "Prognoza modela (CAMS)"));
+        // Heading and text in one block each, so that with large text they are left out together.
+        LinearLayout model = new LinearLayout(c), pollenBlock = new LinearLayout(c);
+        model.setOrientation(LinearLayout.VERTICAL);
+        pollenBlock.setOrientation(LinearLayout.VERTICAL);
+        model.addView(Ui.hairline(c, p.soft), divider(c));
+        model.addView(Ui.label(c, p, "Prognoza modela (CAMS)"));
         Freshness fc = Freshness.of(cams, camsStale, now);
         TextView forecast = Ui.text(c, 14.5f, Fonts.regular(), p.fg);
         TextView pollen = Ui.text(c, 14.5f, Fonts.regular(), p.fg);
@@ -345,12 +353,14 @@ public final class WeatherScreen extends FrameLayout implements Refreshable {
             pollen.setText("");
         }
         forecast.setPadding(0, Ui.dp(c, 3), 0, 0);
-        air.addView(forecast);
-        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        model.addView(forecast);
+        air.addView(model);
+        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         ll.topMargin = Ui.dp(c, 10);
-        air.addView(Ui.label(c, p, "Polen"), ll);
+        pollenBlock.addView(Ui.label(c, p, "Polen"));
         pollen.setPadding(0, Ui.dp(c, 3), 0, 0);
-        air.addView(pollen);
+        pollenBlock.addView(pollen);
+        air.addView(pollenBlock, ll);
 
         air.addView(new View(c), new LinearLayout.LayoutParams(1, 0, 1f));
         TextView src = Ui.text(c, 12, Fonts.regular(), p.fg2);

@@ -229,6 +229,7 @@ public final class SettingsScreen extends FrameLayout implements Refreshable {
             final int index = i;
             boolean on = i == section;
             TextView t = Ui.text(c, 15.5f, Fonts.medium(), on ? p.accent : p.fg);
+            Ui.capSize(t, 15.5f, 1.1f);
             t.setText(SECTIONS[i]);
             t.setGravity(Gravity.CENTER_VERTICAL);
             t.setSingleLine(true);

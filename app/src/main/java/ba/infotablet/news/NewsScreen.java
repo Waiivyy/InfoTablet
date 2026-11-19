@@ -172,14 +172,12 @@ public final class NewsScreen extends FrameLayout implements Refreshable {
         tl.topMargin = Ui.dp(c, 7);
         card.addView(title, tl);
 
-        TextView lead = Ui.text(c, 15, Fonts.regular(), p.fg);
+        TextView lead = Ui.fitText(c, 15, Fonts.regular(), p.fg);
         String text = e.item.optString("lead");
         lead.setText(text.isEmpty() ? "Tekst članka trenutno nije dostupan." : text);
         if (text.isEmpty()) lead.setTextColor(p.fg3);
-        lead.setMaxLines(4);
-        lead.setEllipsize(TextUtils.TruncateAt.END);
         lead.setLineSpacing(Ui.dp(c, 5), 1f);
-        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         ll.topMargin = Ui.dp(c, 7);
         card.addView(lead, ll);
 

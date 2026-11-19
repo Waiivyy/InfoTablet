@@ -21,16 +21,71 @@ import java.util.Locale;
 /** Small view factory so every screen uses the same type scale, panels and labels. */
 public final class Ui {
 
-    /** Body text grows by this factor with "Veća slova"; big numerals (30 dp and up) keep their size. */
+    /** Body text grows by this factor with "Veća" and "Najveća"; big numerals (30 dp and up) keep their size. */
+    private static final float[] SCALES = {1f, 1.1f, 1.4f};
     private static volatile float textScale = 1f;
     /** "Zbijeno": smaller page margins and gaps between cards. */
     private static volatile boolean compact;
 
     private Ui() {}
 
-    public static void configure(boolean largeText, boolean compactLayout) {
-        textScale = largeText ? 1.1f : 1f;
+    public static void configure(int textSize, boolean compactLayout) {
+        textScale = SCALES[Math.max(0, Math.min(textSize, SCALES.length - 1))];
         compact = compactLayout;
+    }
+
+    /** True with "Veća" or "Najveća". */
+    public static boolean largerText() {
+        return textScale > 1.05f;
+    }
+
+    /** True with "Najveća": screens then show fewer items so the bigger text still fits. */
+    public static boolean hugeText() {
+        return textScale > 1.3f;
+    }
+
+    /** Set while a part with fixed-width controls is built (see capBegin). */
+    private static float cap = Float.MAX_VALUE;
+
+    /**
+     * Until capEnd, text grows at most by maxScale. For parts whose buttons have fixed widths, such
+     * as the reminder editor, which otherwise would not fit with "Najveća". Main thread only.
+     */
+    public static void capBegin(float maxScale) {
+        cap = maxScale;
+    }
+
+    public static void capEnd() {
+        cap = Float.MAX_VALUE;
+    }
+
+    private static float scale() {
+        return Math.min(textScale, cap);
+    }
+
+    /** A text size in dp after the user's text size setting. */
+    public static float size(float dp) {
+        return dp < 30 ? dp * scale() : dp;
+    }
+
+    /** For places with a fixed width, such as the rail: the text grows at most by maxScale. */
+    public static void capSize(TextView t, float sizeDp, float maxScale) {
+        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, sizeDp * Math.min(textScale, maxScale));
+    }
+
+    /** A width in pixels for a column that holds text, so it grows with the text size setting. */
+    public static int dpText(Context c, float v) {
+        return dp(c, v * scale());
+    }
+
+    /** Text that shows only whole lines in the height it gets (see FitText). */
+    public static TextView fitText(Context c, float sizeDp, Typeface tf, int color) {
+        TextView t = new FitText(c);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, size(sizeDp));
+        t.setTypeface(tf);
+        t.setTextColor(color);
+        t.setIncludeFontPadding(false);
+        return t;
     }
 
     /** Margin around the cards of a screen. */
@@ -62,7 +117,7 @@ public final class Ui {
 
     public static TextView text(Context c, float sizeDp, Typeface tf, int color) {
         TextView t = new TextView(c);
-        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, sizeDp < 30 ? sizeDp * textScale : sizeDp);
+        t.setTextSize(TypedValue.COMPLEX_UNIT_DIP, size(sizeDp));
         t.setTypeface(tf);
         t.setTextColor(color);
         t.setIncludeFontPadding(false);

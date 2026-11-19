@@ -206,7 +206,7 @@ final class ContentSections {
         LinearLayout box = new LinearLayout(c);
         box.setGravity(Gravity.CENTER_VERTICAL);
         final EditText field = (EditText) LayoutInflater.from(c).inflate(R.layout.edit_text, box, false);
-        field.setTextSize(17);
+        field.setTextSize(Ui.size(17));
         field.setTypeface(Fonts.regular());
         field.setTextColor(p.fg);
         field.setHintTextColor(p.fg3);

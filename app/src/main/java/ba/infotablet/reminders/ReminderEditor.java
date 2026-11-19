@@ -63,176 +63,181 @@ public final class ReminderEditor extends LinearLayout {
         setPadding(Ui.dp(c, 16), Ui.dp(c, 13), Ui.dp(c, 16), Ui.dp(c, 14));
         // Takes the focus when the text field lets go of it, so the keyboard does not pop back up.
         setFocusableInTouchMode(true);
+        final float inputSize = Ui.size(19);   // what is typed keeps the full size
+        Ui.capBegin(1.1f);   // the date, repeat and category buttons have fixed widths
+        try {
+            LinearLayout head = new LinearLayout(c);
+            heading = Ui.label(c, p, "");
+            head.addView(heading, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+            error = Ui.text(c, 13, Fonts.medium(), p.alert);
+            error.setSingleLine(true);
+            head.addView(error);
+            addView(head);
 
-        LinearLayout head = new LinearLayout(c);
-        heading = Ui.label(c, p, "");
-        head.addView(heading, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
-        error = Ui.text(c, 13, Fonts.medium(), p.alert);
-        error.setSingleLine(true);
-        head.addView(error);
-        addView(head);
-
-        text = (EditText) LayoutInflater.from(c).inflate(R.layout.edit_text, this, false);
-        text.setId(View.generateViewId());
-        heading.setLabelFor(text.getId());
-        text.setTextSize(19);
-        text.setTypeface(Fonts.regular());
-        text.setTextColor(p.fg);
-        text.setHintTextColor(p.fg3);
-        text.setHighlightColor(p.accentTint);
-        text.setHint("Npr. Lijek za pritisak");
-        text.setFilters(new InputFilter[] {new InputFilter.LengthFilter(MAX_TEXT)});
-        StateListDrawable field = new StateListDrawable();
-        field.addState(new int[] {android.R.attr.state_focused}, Ui.rounded(c, p.panel, p.accent, 8));
-        field.addState(new int[0], Ui.rounded(c, p.panel, p.line, 8));
-        text.setBackgroundDrawable(field);
-        text.setPadding(Ui.dp(c, 12), 0, Ui.dp(c, 12), 0);
-        text.setText(draft.text);
-        text.setOnEditorActionListener((v, actionId, ev) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE) hideKeyboard();
-            return false;
-        });
-        LayoutParams tl = new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 50));
-        tl.topMargin = Ui.dp(c, 10);
-        addView(text, tl);
-
-        // Date: month and day steps around the full date.
-        addView(section(c, "Datum"));
-        LinearLayout dateRow = new LinearLayout(c);
-        dateRow.setGravity(Gravity.CENTER_VERTICAL);
-        dateRow.addView(step(c, R.drawable.ic_chevrons_left, () -> moveDate(Calendar.MONTH, -1)), square(c, 0));
-        dateRow.addView(step(c, R.drawable.ic_chevron_left, () -> moveDate(Calendar.DAY_OF_MONTH, -1)), square(c, 6));
-        date = Ui.text(c, 18, Fonts.medium(), p.fg);
-        date.setGravity(Gravity.CENTER);
-        date.setSingleLine(true);
-        dateRow.addView(date, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
-        dateRow.addView(step(c, R.drawable.ic_chevron_right, () -> moveDate(Calendar.DAY_OF_MONTH, 1)), square(c, 0));
-        dateRow.addView(step(c, R.drawable.ic_chevrons_right, () -> moveDate(Calendar.MONTH, 1)), square(c, 6));
-        addView(dateRow);
-
-        // Time: rings, silent or the whole day; then hours and minutes (5-minute steps).
-        LinearLayout timeHead = new LinearLayout(c);
-        timeHead.setGravity(Gravity.CENTER_VERTICAL);
-        timeHead.setPadding(0, Ui.dp(c, 9), 0, Ui.dp(c, 6));
-        timeHead.addView(Ui.label(c, p, "Vrijeme"), new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
-        for (int i = 0; i < modeButtons.length; i++) {
-            final int value = i;
-            TextView b = Ui.text(c, 13.5f, Fonts.medium(), p.fg);
-            b.setText(Reminder.MODE_SHORT[i]);
-            b.setGravity(Gravity.CENTER);
-            b.setSingleLine(true);
-            b.setPadding(Ui.dp(c, 12), 0, Ui.dp(c, 12), 0);
-            b.setClickable(true);
-            b.setOnClickListener(v -> {
-                hideKeyboard();
-                draft.setMode(value);
-                render();
+            text = (EditText) LayoutInflater.from(c).inflate(R.layout.edit_text, this, false);
+            text.setId(View.generateViewId());
+            heading.setLabelFor(text.getId());
+            text.setTextSize(inputSize);
+            text.setTypeface(Fonts.regular());
+            text.setTextColor(p.fg);
+            text.setHintTextColor(p.fg3);
+            text.setHighlightColor(p.accentTint);
+            text.setHint("Npr. Lijek za pritisak");
+            text.setFilters(new InputFilter[] {new InputFilter.LengthFilter(MAX_TEXT)});
+            StateListDrawable field = new StateListDrawable();
+            field.addState(new int[] {android.R.attr.state_focused}, Ui.rounded(c, p.panel, p.accent, 8));
+            field.addState(new int[0], Ui.rounded(c, p.panel, p.line, 8));
+            text.setBackgroundDrawable(field);
+            text.setPadding(Ui.dp(c, 12), 0, Ui.dp(c, 12), 0);
+            text.setText(draft.text);
+            text.setOnEditorActionListener((v, actionId, ev) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) hideKeyboard();
+                return false;
             });
-            modeButtons[i] = b;
-            LayoutParams bl = new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 34));
-            bl.leftMargin = Ui.dp(c, 6);
-            timeHead.addView(b, bl);
-        }
-        addView(timeHead);
-        LinearLayout timeRow = new LinearLayout(c);
-        timeRow.setGravity(Gravity.CENTER_VERTICAL);
-        timeSteps = timeRow;
-        timeRow.addView(step(c, R.drawable.ic_minus, () -> moveTime(-60)), square(c, 0));
-        hour = number(c);
-        timeRow.addView(hour, new LayoutParams(Ui.dp(c, 64), LayoutParams.WRAP_CONTENT));
-        timeRow.addView(step(c, R.drawable.ic_plus, () -> moveTime(60)), square(c, 0));
-        TextView colon = Ui.text(c, 30, Fonts.monoMedium(), p.fg2);
-        colon.setText(":");
-        colon.setGravity(Gravity.CENTER);
-        timeRow.addView(colon, new LayoutParams(Ui.dp(c, 28), LayoutParams.WRAP_CONTENT));
-        timeRow.addView(step(c, R.drawable.ic_minus, () -> moveTime(-5)), square(c, 0));
-        minute = number(c);
-        timeRow.addView(minute, new LayoutParams(Ui.dp(c, 64), LayoutParams.WRAP_CONTENT));
-        timeRow.addView(step(c, R.drawable.ic_plus, () -> moveTime(5)), square(c, 0));
-        android.widget.FrameLayout timeBox = new android.widget.FrameLayout(c);
-        timeBox.addView(timeRow, new android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
-        allDayNote = Ui.text(c, 16, Fonts.regular(), p.fg2);
-        allDayNote.setText("Za cijeli dan, bez zvona. Vidi se na početnom ekranu i u kalendaru.");
-        allDayNote.setGravity(Gravity.CENTER_VERTICAL);
-        timeBox.addView(allDayNote, new android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
-        addView(timeBox, new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
+            LayoutParams tl = new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 50));
+            tl.topMargin = Ui.dp(c, 10);
+            addView(text, tl);
 
-        addView(section(c, "Ponavljanje"));
-        LinearLayout repeatRow = new LinearLayout(c);
-        for (int i = 0; i < repeatButtons.length; i++) {
-            final int value = i;
-            TextView b = Ui.text(c, 14.5f, Fonts.medium(), p.fg);
-            b.setText(Reminder.REPEAT_SHORT[i]);
-            b.setGravity(Gravity.CENTER);
-            b.setSingleLine(true);
-            b.setClickable(true);
-            b.setOnClickListener(v -> {
-                hideKeyboard();
-                draft.repeat = value;
-                render();
+            // Date: month and day steps around the full date.
+            addView(section(c, "Datum"));
+            LinearLayout dateRow = new LinearLayout(c);
+            dateRow.setGravity(Gravity.CENTER_VERTICAL);
+            dateRow.addView(step(c, R.drawable.ic_chevrons_left, () -> moveDate(Calendar.MONTH, -1)), square(c, 0));
+            dateRow.addView(step(c, R.drawable.ic_chevron_left, () -> moveDate(Calendar.DAY_OF_MONTH, -1)), square(c, 6));
+            date = Ui.text(c, 18, Fonts.medium(), p.fg);
+            date.setGravity(Gravity.CENTER);
+            date.setSingleLine(true);
+            dateRow.addView(date, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+            dateRow.addView(step(c, R.drawable.ic_chevron_right, () -> moveDate(Calendar.DAY_OF_MONTH, 1)), square(c, 0));
+            dateRow.addView(step(c, R.drawable.ic_chevrons_right, () -> moveDate(Calendar.MONTH, 1)), square(c, 6));
+            addView(dateRow);
+
+            // Time: rings, silent or the whole day; then hours and minutes (5-minute steps).
+            LinearLayout timeHead = new LinearLayout(c);
+            timeHead.setGravity(Gravity.CENTER_VERTICAL);
+            timeHead.setPadding(0, Ui.dp(c, 9), 0, Ui.dp(c, 6));
+            timeHead.addView(Ui.label(c, p, "Vrijeme"), new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+            for (int i = 0; i < modeButtons.length; i++) {
+                final int value = i;
+                TextView b = Ui.text(c, 13.5f, Fonts.medium(), p.fg);
+                b.setText(Reminder.MODE_SHORT[i]);
+                b.setGravity(Gravity.CENTER);
+                b.setSingleLine(true);
+                b.setPadding(Ui.dp(c, 12), 0, Ui.dp(c, 12), 0);
+                b.setClickable(true);
+                b.setOnClickListener(v -> {
+                    hideKeyboard();
+                    draft.setMode(value);
+                    render();
+                });
+                modeButtons[i] = b;
+                LayoutParams bl = new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 34));
+                bl.leftMargin = Ui.dp(c, 6);
+                timeHead.addView(b, bl);
+            }
+            addView(timeHead);
+            LinearLayout timeRow = new LinearLayout(c);
+            timeRow.setGravity(Gravity.CENTER_VERTICAL);
+            timeSteps = timeRow;
+            timeRow.addView(step(c, R.drawable.ic_minus, () -> moveTime(-60)), square(c, 0));
+            hour = number(c);
+            timeRow.addView(hour, new LayoutParams(Ui.dp(c, 64), LayoutParams.WRAP_CONTENT));
+            timeRow.addView(step(c, R.drawable.ic_plus, () -> moveTime(60)), square(c, 0));
+            TextView colon = Ui.text(c, 30, Fonts.monoMedium(), p.fg2);
+            colon.setText(":");
+            colon.setGravity(Gravity.CENTER);
+            timeRow.addView(colon, new LayoutParams(Ui.dp(c, 28), LayoutParams.WRAP_CONTENT));
+            timeRow.addView(step(c, R.drawable.ic_minus, () -> moveTime(-5)), square(c, 0));
+            minute = number(c);
+            timeRow.addView(minute, new LayoutParams(Ui.dp(c, 64), LayoutParams.WRAP_CONTENT));
+            timeRow.addView(step(c, R.drawable.ic_plus, () -> moveTime(5)), square(c, 0));
+            android.widget.FrameLayout timeBox = new android.widget.FrameLayout(c);
+            timeBox.addView(timeRow, new android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
+            allDayNote = Ui.text(c, 16, Fonts.regular(), p.fg2);
+            allDayNote.setText("Za cijeli dan, bez zvona. Vidi se na početnom ekranu i u kalendaru.");
+            allDayNote.setGravity(Gravity.CENTER_VERTICAL);
+            timeBox.addView(allDayNote, new android.widget.FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
+            addView(timeBox, new LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(c, 48)));
+
+            addView(section(c, "Ponavljanje"));
+            LinearLayout repeatRow = new LinearLayout(c);
+            for (int i = 0; i < repeatButtons.length; i++) {
+                final int value = i;
+                TextView b = Ui.text(c, 14.5f, Fonts.medium(), p.fg);
+                b.setText(Reminder.REPEAT_SHORT[i]);
+                b.setGravity(Gravity.CENTER);
+                b.setSingleLine(true);
+                b.setClickable(true);
+                b.setOnClickListener(v -> {
+                    hideKeyboard();
+                    draft.repeat = value;
+                    render();
+                });
+                repeatButtons[i] = b;
+                LayoutParams bl = new LayoutParams(0, Ui.dp(c, 42), 1f);
+                if (i > 0) bl.leftMargin = Ui.dp(c, 6);
+                repeatRow.addView(b, bl);
+            }
+            addView(repeatRow);
+
+            addView(section(c, "Vrsta"));
+            LinearLayout kindRow = new LinearLayout(c);
+            for (int i = 0; i < kindButtons.length; i++) {
+                final String key = Reminder.CATEGORIES[i];
+                LinearLayout b = new LinearLayout(c);
+                b.setOrientation(VERTICAL);
+                b.setGravity(Gravity.CENTER);
+                b.setClickable(true);
+                b.setOnClickListener(v -> {
+                    hideKeyboard();
+                    draft.category = key;
+                    render();
+                });
+                b.addView(Ui.icon(c, ReminderText.icon(key), p.fg2, 22));
+                TextView name = Ui.text(c, 12, Fonts.medium(), p.fg);
+                name.setText(key.isEmpty() ? "Ostalo" : Reminder.categoryName(key));
+                name.setSingleLine(true);
+                LayoutParams nl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                nl.topMargin = Ui.dp(c, 4);
+                b.addView(name, nl);
+                kindButtons[i] = b;
+                LayoutParams bl = new LayoutParams(0, Ui.dp(c, 58), 1f);
+                if (i > 0) bl.leftMargin = Ui.dp(c, 6);
+                kindRow.addView(b, bl);
+            }
+            addView(kindRow);
+
+            addView(new View(c), new LayoutParams(1, 0, 1f));
+
+            LinearLayout actions = new LinearLayout(c);
+            if (!isNew) {
+                delete = Ui.button(c, p, "Obriši", false, 16);
+                delete.setTextColor(p.alert);
+                delete.setOnClickListener(v -> onDelete());
+                actions.addView(delete, new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 50)));
+            }
+            actions.addView(new View(c), new LayoutParams(0, 1, 1f));
+            TextView cancel = Ui.button(c, p, "Odustani", false, 16);
+            cancel.setOnClickListener(v -> close(0));
+            actions.addView(cancel, new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 50)));
+            TextView save = Ui.button(c, p, "Sačuvaj", true, 17);
+            save.setOnClickListener(v -> onSave());
+            LayoutParams sl = new LayoutParams(Ui.dp(c, 132), Ui.dp(c, 50));
+            sl.leftMargin = Ui.dp(c, 10);
+            actions.addView(save, sl);
+            LayoutParams al = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+            al.topMargin = Ui.dp(c, Ui.largerText() ? 6 : 10);
+            addView(actions, al);
+
+            render();
+            if (isNew) post(() -> {
+                text.requestFocus();
+                InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(text, InputMethodManager.SHOW_IMPLICIT);
             });
-            repeatButtons[i] = b;
-            LayoutParams bl = new LayoutParams(0, Ui.dp(c, 42), 1f);
-            if (i > 0) bl.leftMargin = Ui.dp(c, 6);
-            repeatRow.addView(b, bl);
+        } finally {
+            Ui.capEnd();
         }
-        addView(repeatRow);
-
-        addView(section(c, "Vrsta"));
-        LinearLayout kindRow = new LinearLayout(c);
-        for (int i = 0; i < kindButtons.length; i++) {
-            final String key = Reminder.CATEGORIES[i];
-            LinearLayout b = new LinearLayout(c);
-            b.setOrientation(VERTICAL);
-            b.setGravity(Gravity.CENTER);
-            b.setClickable(true);
-            b.setOnClickListener(v -> {
-                hideKeyboard();
-                draft.category = key;
-                render();
-            });
-            b.addView(Ui.icon(c, ReminderText.icon(key), p.fg2, 22));
-            TextView name = Ui.text(c, 12, Fonts.medium(), p.fg);
-            name.setText(key.isEmpty() ? "Ostalo" : Reminder.categoryName(key));
-            name.setSingleLine(true);
-            LayoutParams nl = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-            nl.topMargin = Ui.dp(c, 4);
-            b.addView(name, nl);
-            kindButtons[i] = b;
-            LayoutParams bl = new LayoutParams(0, Ui.dp(c, 58), 1f);
-            if (i > 0) bl.leftMargin = Ui.dp(c, 6);
-            kindRow.addView(b, bl);
-        }
-        addView(kindRow);
-
-        addView(new View(c), new LayoutParams(1, 0, 1f));
-
-        LinearLayout actions = new LinearLayout(c);
-        if (!isNew) {
-            delete = Ui.button(c, p, "Obriši", false, 16);
-            delete.setTextColor(p.alert);
-            delete.setOnClickListener(v -> onDelete());
-            actions.addView(delete, new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 50)));
-        }
-        actions.addView(new View(c), new LayoutParams(0, 1, 1f));
-        TextView cancel = Ui.button(c, p, "Odustani", false, 16);
-        cancel.setOnClickListener(v -> close(0));
-        actions.addView(cancel, new LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(c, 50)));
-        TextView save = Ui.button(c, p, "Sačuvaj", true, 17);
-        save.setOnClickListener(v -> onSave());
-        LayoutParams sl = new LayoutParams(Ui.dp(c, 132), Ui.dp(c, 50));
-        sl.leftMargin = Ui.dp(c, 10);
-        actions.addView(save, sl);
-        LayoutParams al = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        al.topMargin = Ui.dp(c, 10);
-        addView(actions, al);
-
-        render();
-        if (isNew) post(() -> {
-            text.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(text, InputMethodManager.SHOW_IMPLICIT);
-        });
     }
 
     /** True while the editor holds input that has not been saved. */
@@ -256,7 +261,7 @@ public final class ReminderEditor extends LinearLayout {
 
     private View section(Context c, String title) {
         TextView l = Ui.label(c, p, title);
-        l.setPadding(0, Ui.dp(c, 13), 0, Ui.dp(c, 6));
+        l.setPadding(0, Ui.dp(c, Ui.largerText() ? 11 : 13), 0, Ui.dp(c, 6));   // larger text: tighter, so Sačuvaj fits
         return l;
     }
 

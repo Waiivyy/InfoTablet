@@ -107,14 +107,14 @@ public final class Theme {
     /** Applies the text size and density settings to the view factory. */
     public static void configureUi(Context c) {
         Settings s = Settings.of(c);
-        Ui.configure(s.largeText(), s.compact());
+        Ui.configure(s.textSize(), s.compact());
     }
 
     /** Changes when anything that is baked into the built screens changes. */
     public static String lookKey(Context c, long now) {
         Settings s = Settings.of(c);
         StringBuilder b = new StringBuilder();
-        b.append(dark(c, now)).append(s.accent()).append(s.background()).append(s.largeText()).append(s.compact())
+        b.append(dark(c, now)).append(s.accent()).append(s.background()).append(s.textSize()).append(s.compact())
                 .append(s.clock24h()).append(s.clockSeconds());
         for (String t : s.tiles()) b.append(t);
         for (int i = Settings.FIRST_HIDEABLE_TAB; i <= Settings.LAST_HIDEABLE_TAB; i++) b.append(s.tabVisible(i) ? '1' : '0');

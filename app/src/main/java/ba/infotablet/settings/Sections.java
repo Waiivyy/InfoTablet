@@ -120,11 +120,11 @@ final class Sections {
         }
         add(out, p, Controls.block(c, p, "Boja naglaska", "Za odabranu karticu, dugmad i oznake.", swatches));
 
-        add(out, p, Controls.row(c, p, "Veličina slova", "Veća slova za tekst; sat i brojevi ostaju isti.",
-                fixed(c, Controls.choice(c, p, new String[] {"Normalna", "Veća"}, st.largeText() ? 1 : 0, i -> {
-                    st.putBoolean("large_text", i == 1);
+        add(out, p, Controls.block(c, p, "Veličina slova", "Za tekst na svim ekranima; sat i veliki brojevi ostaju isti. Uz najveća slova ekrani prikazuju manje stavki.",
+                Controls.choice(c, p, new String[] {"Normalna", "Veća", "Najveća"}, st.textSize(), i -> {
+                    st.setTextSize(i);
                     s.changed();
-                }), 260)));
+                })));
         add(out, p, Controls.row(c, p, "Gustoća", "Zbijeno: manji razmaci između kartica.",
                 fixed(c, Controls.choice(c, p, new String[] {"Normalna", "Zbijena"}, st.compact() ? 1 : 0, i -> {
                     st.putBoolean("compact", i == 1);

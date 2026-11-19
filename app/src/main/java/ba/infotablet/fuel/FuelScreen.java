@@ -15,6 +15,7 @@ import ba.infotablet.R;
 import ba.infotablet.data.Cache;
 import ba.infotablet.data.SourceState;
 import ba.infotablet.sources.FuelSource;
+import ba.infotablet.ui.FitColumn;
 import ba.infotablet.ui.Fonts;
 import ba.infotablet.ui.Freshness;
 import ba.infotablet.ui.NarrowSpan;
@@ -64,8 +65,7 @@ public final class FuelScreen extends FrameLayout implements Refreshable {
         list.setOrientation(LinearLayout.VERTICAL);
         list.setBackgroundDrawable(Ui.panel(c, p));
         bottom.addView(list, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
-        side = new LinearLayout(c);
-        side.setOrientation(LinearLayout.VERTICAL);
+        side = new FitColumn(c);
         side.setBackgroundDrawable(Ui.panel(c, p));
         LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(sideW, LinearLayout.LayoutParams.MATCH_PARENT);
         sl.leftMargin = gap;
@@ -244,13 +244,18 @@ public final class FuelScreen extends FrameLayout implements Refreshable {
         }
 
         side.addView(new View(c), new LinearLayout.LayoutParams(1, 0, 1f));
-        side.addView(Ui.hairline(c, p.soft), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, Ui.dp(c, 1))));
+        LinearLayout foot = new LinearLayout(c);   // divider and source together, so they are left out together
+        foot.setOrientation(LinearLayout.VERTICAL);
+        foot.addView(Ui.hairline(c, p.soft), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, Ui.dp(c, 1))));
         TextView src = Ui.text(c, 12.5f, Fonts.regular(), p.fg2);
         src.setLineSpacing(Ui.dp(c, 2), 1f);
         String updated = st.okAt > 0 ? " · osvježeno " + Fmt.when(lastNow, st.okAt) : "";
-        src.setText((outlierNote != null ? outlierNote + "\n" : "") + "Izvor: uhvatipopust.ba (podaci FMT eOPC)" + updated);
+        // With large text only the source; the "Provjeriti" mark above still flags the odd price.
+        if (Ui.hugeText()) src.setText("Izvor: uhvatipopust.ba" + updated);
+        else src.setText((outlierNote != null ? outlierNote + "\n" : "") + "Izvor: uhvatipopust.ba (podaci FMT eOPC)" + updated);
         src.setPadding(hp, Ui.dp(c, 11), hp, Ui.dp(c, 12));
-        side.addView(src);
+        foot.addView(src);
+        side.addView(foot);
     }
 
     private LinearLayout block(Context c, int hp) {

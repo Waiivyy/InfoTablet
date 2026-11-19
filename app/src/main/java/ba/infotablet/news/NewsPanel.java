@@ -60,12 +60,10 @@ public final class NewsPanel extends LinearLayout {
         LayoutParams tl = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         tl.topMargin = Ui.dp(c, 6);
         addView(title, tl);
-        TextView lead = Ui.text(c, 14, Fonts.regular(), p.fg2);
+        TextView lead = Ui.fitText(c, 14, Fonts.regular(), p.fg2);
         lead.setText(pick.item.optString("lead"));
-        lead.setMaxLines(3);
-        lead.setEllipsize(TextUtils.TruncateAt.END);
         lead.setLineSpacing(Ui.dp(c, 2), 1f);
-        LayoutParams ll = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LayoutParams ll = new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f);
         ll.topMargin = Ui.dp(c, 6);
         addView(lead, ll);
         if (pick.stale) {
