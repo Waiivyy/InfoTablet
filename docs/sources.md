@@ -205,7 +205,7 @@ Server-rendered Joomla HTML, 37 to 70 KB per page. robots.txt allows these pages
 - **URL:** `https://www.cbbh.ba/CurrencyExchange/GetJson?date=yyyy-MM-dd` (734 B gzip). XML at `GetXml` (root tag is misspelled `CurrencyExchaneData`; do not validate it).
 - **Structure:** `{"CurrencyExchangeItems":[{"AlphaCode":"USD","Units":"1","Buy":"1.771328","Middle":"1.775767","Sell":"1.780206", ...}], "Date":"2026-11-17T00:00:00", "Number":226}`. All numbers are strings; divide by `Units` (100 for HUF, JPY, RSD). XDR has empty Buy/Sell. Key on `AlphaCode`, not `Country` (typos).
 - **Semantics:** the server returns the newest list dated on or before the requested date, never an error, so always read `Date`. Lists are published after 16:00 on working days and dated the next day (Friday's list is dated Saturday).
-- **Poll:** from 16:05 on working days request tomorrow's date; if `Date` is not newer than the cached list, retry every 30 min until 19:00.
+- **Poll:** from 16:05 on working days request tomorrow's date; if `Date` is not newer than the cached list, retry every 30 min until 19:00. If the cached list is older than today (the tablet was off or offline), fetch it right away (once that day) instead of waiting for 16:05.
 - **Verified:** list No. 226 dated 17 Nov 2026: USD 1.775767, CHF 2.115783, GBP 2.343715 (middle). EUR fixed at 1.95583.
 - **Terms:** use allowed with "Centralna banka BiH" named as source and a link to www.cbbh.ba; no commercial use.
 

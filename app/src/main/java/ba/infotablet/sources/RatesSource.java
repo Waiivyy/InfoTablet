@@ -13,7 +13,8 @@ import ba.infotablet.sync.BaseSource;
 
 /**
  * CBBH daily exchange rates. The list for the next day is published on working days after 16:00,
- * so from 16:05 the source asks for tomorrow's list and retries every 30 minutes until 19:00.
+ * so from 16:05 the source asks for tomorrow's list and retries every 30 minutes until 19:00. When
+ * the list it has is older than today (the tablet was off), it asks once that day without waiting.
  */
 public final class RatesSource extends BaseSource {
 
@@ -39,7 +40,10 @@ public final class RatesSource extends BaseSource {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(now);
         int minutes = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE);
-        boolean haveTomorrow = listDate >= startOfDay(now) + 86_400_000L;
+        long today = startOfDay(now);
+        // Back after being off or offline for days: today's list is already out, so fetch it once now.
+        if (listDate < today && st.attemptAt < today) return today;
+        boolean haveTomorrow = listDate >= today + 86_400_000L;
         if (!haveTomorrow && minutes >= 16 * 60 + 5 && minutes < 19 * 60) return st.attemptAt + 30 * 60_000L;
         Calendar next = Calendar.getInstance();
         next.setTimeInMillis(now);
